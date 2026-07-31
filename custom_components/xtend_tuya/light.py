@@ -417,30 +417,41 @@ class XTLightEntity(XTEntity, TuyaLightEntity):
         self.device_manager = device_manager
         self.entity_description = description
 
-        if self._color_mode_wrapper:
+        # Enable EFFECT only for string lights (based on model name / product name)
+        self._is_string_light = (
+            self.device.product_name
+            and ("string light" in self.device.product_name.lower() or "guirnalda" in self.device.product_name.lower())
+        )
+        if self._color_mode_wrapper and self._is_string_light:
             self._attr_supported_features |= LightEntityFeature.EFFECT
             self._attr_effect_list = self._color_mode_wrapper.options
 
     @property
     def effect(self) -> str | None:
         """Return the current effect."""
-        if self._color_mode_wrapper:
+        if self._color_mode_wrapper and getattr(self, "_is_string_light", False):
             return self._read_wrapper(self._color_mode_wrapper)
         return None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on or control the light."""
-        if self._color_mode_wrapper and ATTR_EFFECT in kwargs:
-            effect = kwargs[ATTR_EFFECT]
-            commands = self._color_mode_wrapper.get_update_commands(
-                self.device, effect
-            )
-            if not self.is_on:
-                commands.extend(
-                    self._switch_wrapper.get_update_commands(self.device, True)
+        if ATTR_EFFECT in kwargs:
+            effect = kwargs.pop(ATTR_EFFECT)
+            if (
+                self._color_mode_wrapper
+                and getattr(self, "_is_string_light", False)
+                and self._attr_effect_list
+                and effect in self._attr_effect_list
+            ):
+                commands = self._color_mode_wrapper.get_update_commands(
+                    self.device, effect
                 )
-            await self._async_send_commands(commands)
-            return
+                if not self.is_on:
+                    commands.extend(
+                        self._switch_wrapper.get_update_commands(self.device, True)
+                    )
+                await self._async_send_commands(commands)
+                return
 
         await super().async_turn_on(**kwargs)
 
