@@ -27,17 +27,18 @@ jobs:
           UPSTREAM_TAG=$(gh api repos/azerty9971/xtend_tuya/releases/latest --jq '.tag_name')
           echo "UPSTREAM_TAG=$UPSTREAM_TAG" >> $GITHUB_ENV
           
-          MY_TAG="${UPSTREAM_TAG}-guirnalda.1"
-          echo "MY_TAG=$MY_TAG" >> $GITHUB_ENV
+          # Buscar si ya existe algún release en el fork para esta versión de upstream
+          LATEST_FORK_TAG=$(gh api repos/${{ github.repository }}/releases --jq ".[].tag_name | select(starts_with(\"${UPSTREAM_TAG}-guirnalda\"))" | head -n 1)
           
-          IF_EXISTS=$(gh api repos/${{ github.repository }}/releases/tags/${MY_TAG} --jq '.id' || true)
-          if [ -n "$IF_EXISTS" ]; then
-            echo "Release $MY_TAG ya existe en el fork."
-            echo "SHOULD_RELEASE=false" >> $GITHUB_ENV
-          else
-            echo "Release nueva detectada ($UPSTREAM_TAG)! Se creará $MY_TAG."
+          if [ -z "$LATEST_FORK_TAG" ]; then
+            MY_TAG="${UPSTREAM_TAG}-guirnalda.1"
             echo "SHOULD_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "Ya existe una release en el fork para $UPSTREAM_TAG ($LATEST_FORK_TAG)."
+            echo "SHOULD_RELEASE=false" >> $GITHUB_ENV
+            MY_TAG="$LATEST_FORK_TAG"
           fi
+          echo "MY_TAG=$MY_TAG" >> $GITHUB_ENV
 
       - name: Sync & Merge Upstream
         if: env.SHOULD_RELEASE == 'true'
