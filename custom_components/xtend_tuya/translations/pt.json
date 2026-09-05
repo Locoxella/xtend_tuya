@@ -3241,5 +3241,43 @@
       "no_configurable_properties": "The selected device does not have configurable properties.",
       "no_multi_manager": "No Multi Manager stored, please contact the developer."
     }
+  },
+  "exceptions": {
+    "invalid_pin": {
+      "message": "The PIN must be purely numeric and contain between 6 and 8 digits."
+    },
+    "missing_device_param": {
+      "message": "Missing required parameter: device."
+    },
+    "missing_password_param": {
+      "message": "Missing required parameter: password."
+    },
+    "missing_device_and_password": {
+      "message": "Missing required parameters: device and password are required."
+    },
+    "missing_device_and_password_id": {
+      "message": "Missing required parameters: device and password_id are required."
+    },
+    "device_not_found": {
+      "message": "Device '{device_id}' not found in Xtend Tuya integration."
+    },
+    "no_tuya_account": {
+      "message": "No valid Tuya account found for device {device}."
+    },
+    "lock_requires_7_digits": {
+      "message": "Tuya API Error for device {device}: Incorrect passcode length (code {code}). This lock requires a numeric PIN of exactly 7 digits (you entered {length} digits)."
+    },
+    "smart_lock_service_unauthorized": {
+      "message": "Tuya API Error for device {device}: No permissions (code {code}). Missing 'Smart Lock Service' authorization in iot.tuya.com (Cloud > Development > Your Project > Service API)."
+    },
+    "invalid_lock_parameters": {
+      "message": "Tuya API Error for device {device}: Invalid parameters (code {code}). Verify that the PIN and dates are valid for this lock."
+    },
+    "tuya_api_error": {
+      "message": "Tuya API Error for device {device}: {msg} (code {code})."
+    },
+    "action_error": {
+      "message": "Error performing {action}: {error}."
+    }
   }
 }

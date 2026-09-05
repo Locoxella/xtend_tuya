@@ -3241,5 +3241,43 @@
       "no_configurable_properties": "The selected device does not have configurable properties.",
       "no_multi_manager": "No Multi Manager stored, please contact the developer."
     }
+  },
+  "exceptions": {
+    "invalid_pin": {
+      "message": "El PIN debe ser puramente numérico y contener entre 6 y 8 dígitos."
+    },
+    "missing_device_param": {
+      "message": "Falta el parámetro requerido: dispositivo."
+    },
+    "missing_password_param": {
+      "message": "Falta el parámetro requerido: contraseña."
+    },
+    "missing_device_and_password": {
+      "message": "Faltan parámetros requeridos: dispositivo y contraseña son obligatorios."
+    },
+    "missing_device_and_password_id": {
+      "message": "Faltan parámetros requeridos: dispositivo y password_id son obligatorios."
+    },
+    "device_not_found": {
+      "message": "Dispositivo '{device_id}' no encontrado en la integración Xtend Tuya."
+    },
+    "no_tuya_account": {
+      "message": "No se encontró una cuenta Tuya válida para el dispositivo {device}."
+    },
+    "lock_requires_7_digits": {
+      "message": "Error de Tuya API para el dispositivo {device}: Longitud de clave incorrecta (código {code}). Esta cerradura requiere un PIN numérico de 7 dígitos exactos (ingresaste {length} dígitos)."
+    },
+    "smart_lock_service_unauthorized": {
+      "message": "Error de Tuya API para el dispositivo {device}: Sin permisos (código {code}). Falta autorizar el servicio 'Smart Lock Service' en iot.tuya.com (Cloud > Development > Tu Proyecto > Service API)."
+    },
+    "invalid_lock_parameters": {
+      "message": "Error de Tuya API para el dispositivo {device}: Parámetros inválidos (código {code}). Verifica que el PIN y las fechas sean válidos para esta cerradura."
+    },
+    "tuya_api_error": {
+      "message": "Error de Tuya API para el dispositivo {device}: {msg} (código {code})."
+    },
+    "action_error": {
+      "message": "Error al realizar {action}: {error}."
+    }
   }
 }
