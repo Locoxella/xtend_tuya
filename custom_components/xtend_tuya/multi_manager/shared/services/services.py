@@ -249,6 +249,7 @@ class ServiceManager:
             True,
             True,
             False,
+            supports_response=SupportsResponse.OPTIONAL,
         )
 
     def _register_service(

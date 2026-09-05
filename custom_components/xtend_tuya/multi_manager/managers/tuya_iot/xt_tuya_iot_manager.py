@@ -1317,15 +1317,40 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         password_id: int | str,
         api: XTIOTOpenAPI | None = None,
     ) -> dict[str, Any]:
-        """Delete a temporary password from a Tuya smart lock by password_id."""
+        """Delete a temporary password from a Tuya smart lock by password_id.
+
+        If the password has already expired (code 2304), automatically falls back to
+        deleting the expired password record via the /record endpoint.
+        """
         apis_to_try = [api] if api else [self.api]
         apis_to_try = [a for a in apis_to_try if a is not None]
 
         res: dict[str, Any] = {}
         for api_to_use in apis_to_try:
             try:
+                # 1. Try normal delete for active password
                 res = api_to_use.delete(f"/v1.0/devices/{device.id}/door-lock/temp-passwords/{password_id}")
                 LOGGER.info(f"[Tuya Temp Password] DELETE temp-passwords/{password_id} response for device {device.id}: {res}")
+
+                # 2. If password has expired (code 2304 or message says expired), delete the expired record
+                code = res.get("code") if isinstance(res, dict) else None
+                msg = str(res.get("msg", "")).lower() if isinstance(res, dict) else ""
+                if not res.get("success", False) and (code == 2304 or "expired" in msg):
+                    LOGGER.info(f"[Tuya Temp Password] Password {password_id} is expired (code {code}). Attempting /record deletion fallback...")
+                    record_res = api_to_use.delete(f"/v1.0/devices/{device.id}/door-lock/temp-passwords/{password_id}/record")
+                    LOGGER.info(f"[Tuya Temp Password] DELETE temp-passwords/{password_id}/record response: {record_res}")
+                    if record_res and record_res.get("success", False):
+                        res = record_res
+                    elif isinstance(record_res, dict) and record_res.get("code") == 2302:
+                        # 2302: password does not exist (already deleted)
+                        res = {"success": True, "result": True, "note": "Password record was already removed"}
+                    elif record_res:
+                        res = record_res
+
+                # 3. Idempotent success if password already doesn't exist
+                if isinstance(res, dict) and not res.get("success", False) and res.get("code") == 2302:
+                    res = {"success": True, "result": True, "note": "Password does not exist"}
+
                 if res and res.get("success", False):
                     break
             except Exception as e:
