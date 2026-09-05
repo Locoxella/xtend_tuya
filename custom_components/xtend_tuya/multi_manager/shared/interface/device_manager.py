@@ -249,6 +249,12 @@ class XTDeviceManagerLockManagementInterface(ABC):
     def get_dynamic_password(self, device: shared.XTDevice, api: Any | None = None) -> dict[str, Any] | None:
         return None
 
+    def get_temporary_passwords(self, device: shared.XTDevice, api: Any | None = None) -> list[dict[str, Any]]:
+        return []
+
+    def delete_temporary_password(self, device: shared.XTDevice, password_id: int | str, api: Any | None = None) -> dict[str, Any] | None:
+        return None
+
 
 
 class XTDeviceManagerMultiManagerManagementInterface(ABC):

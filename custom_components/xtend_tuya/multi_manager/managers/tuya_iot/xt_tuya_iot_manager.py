@@ -1266,6 +1266,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
             "name": name or "HA Temp Password",
             "effective_time": eff_time,
             "invalid_time": inv_time,
+            "password_type": "ticket",
         }
         if ticket_id:
             payload["ticket_id"] = ticket_id
@@ -1307,7 +1308,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
 
             if res.get("success", False):
                 LOGGER.info(
-                    f"[Tuya Temp Password] Successfully created temporary password '{name}' for device {device.id}."
+                    f"[Tuya Temp Password] Successfully created temporary password '{name}' for device {device.id}. Result: {res.get('result')}"
                 )
             else:
                 LOGGER.error(
@@ -1333,6 +1334,49 @@ class XTIOTDeviceManager(TuyaDeviceManager):
             )
             res = {"success": False, "error": str(e)}
 
+        return res
+
+    def get_temporary_passwords(
+        self,
+        device: XTDevice,
+        api: XTIOTOpenAPI | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get all active temporary passwords for a Tuya smart lock."""
+        api_to_use = api or self.api
+        try:
+            res = api_to_use.get(f"/v1.0/devices/{device.id}/door-lock/temp-passwords")
+            LOGGER.info(f"[Tuya Temp Password] GET temp-passwords response for device {device.id}: {res}")
+            if res and res.get("success", False):
+                return res.get("result", [])
+        except Exception as e:
+            LOGGER.error(f"[Tuya Temp Password] Exception in get_temporary_passwords for {device.id}: {e}", exc_info=True)
+        return []
+
+    def delete_temporary_password(
+        self,
+        device: XTDevice,
+        password_id: int | str,
+        api: XTIOTOpenAPI | None = None,
+    ) -> dict[str, Any]:
+        """Delete a temporary password from a Tuya smart lock by password_id."""
+        api_to_use = api or self.api
+        res: dict[str, Any] = {}
+        try:
+            res = api_to_use.delete(f"/v1.0/devices/{device.id}/door-lock/temp-passwords/{password_id}")
+            LOGGER.info(f"[Tuya Temp Password] DELETE temp-passwords/{password_id} response for device {device.id}: {res}")
+            if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                self.multi_manager.hass.bus.async_fire(
+                    "xtend_tuya_temp_password_deleted",
+                    {
+                        "device_id": device.id,
+                        "password_id": password_id,
+                        "success": res.get("success", False),
+                        "response": res,
+                    },
+                )
+        except Exception as e:
+            LOGGER.error(f"[Tuya Temp Password] Exception in delete_temporary_password for {device.id}: {e}", exc_info=True)
+            res = {"success": False, "error": str(e)}
         return res
 
 

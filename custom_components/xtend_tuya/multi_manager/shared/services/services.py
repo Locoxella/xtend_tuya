@@ -101,6 +101,23 @@ SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_GET_TEMP_PASSWORDS = "get_temporary_passwords"
+SERVICE_GET_TEMP_PASSWORDS_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_DEVICE_ID): vol.Any(cv.string, [cv.string]),
+        vol.Optional(CONF_SOURCE): cv.string,
+    }
+)
+
+SERVICE_DELETE_TEMP_PASSWORD = "delete_temporary_password"
+SERVICE_DELETE_TEMP_PASSWORD_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_DEVICE_ID): vol.Any(cv.string, [cv.string]),
+        vol.Required("password_id"): vol.Any(cv.positive_int, cv.string),
+        vol.Optional(CONF_SOURCE): cv.string,
+    }
+)
+
 
 
 def parse_time_to_millis(val: Any) -> int | None:
@@ -203,6 +220,24 @@ class ServiceManager:
             SERVICE_GET_DYNAMIC_PASSCODE,
             self._handle_get_dynamic_passcode,
             SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA,
+            True,
+            True,
+            False,
+        )
+        self._register_service(
+            DOMAIN,
+            SERVICE_GET_TEMP_PASSWORDS,
+            self._handle_get_temp_passwords,
+            SERVICE_GET_TEMP_PASSWORDS_SCHEMA,
+            True,
+            True,
+            False,
+        )
+        self._register_service(
+            DOMAIN,
+            SERVICE_DELETE_TEMP_PASSWORD,
+            self._handle_delete_temp_password,
+            SERVICE_DELETE_TEMP_PASSWORD_SCHEMA,
             True,
             True,
             False,
@@ -471,6 +506,80 @@ class ServiceManager:
                 LOGGER.error(f"[Tuya Dynamic Passcode Service] Could not find multi_manager for device {device_id}")
         except Exception as e:
             LOGGER.error(f"[Tuya Dynamic Passcode Service] Exception in _handle_get_dynamic_passcode: {e}", exc_info=True)
+        return None
+
+    async def _handle_get_temp_passwords(
+        self, event: XTEventData
+    ) -> list[dict[str, Any]] | None:
+        try:
+            source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
+            device_id_raw = event.data.get(CONF_DEVICE_ID, None)
+            device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
+            LOGGER.info(f"[Tuya Temp Password Service] get_temporary_passwords called for device={device_id}")
+            if not device_id:
+                LOGGER.error(f"[Tuya Temp Password Service] Missing required parameter: device_id")
+                return None
+            if multi_manager := self._get_correct_multi_manager(source, device_id):
+                if account := multi_manager.get_account_by_name(source):
+                    target = account
+                    if not hasattr(target, "get_temporary_passwords") and hasattr(account, "iot_account") and account.iot_account:
+                        target = getattr(account.iot_account, "device_manager", account)
+
+                    if device := multi_manager.device_map.get(device_id):
+                        if hasattr(target, "get_temporary_passwords"):
+                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                                target.get_temporary_passwords,
+                                device,
+                            )
+                            return response
+                        else:
+                            LOGGER.error(f"[Tuya Temp Password Service] Account target {target} does not implement get_temporary_passwords")
+                    else:
+                        LOGGER.error(f"[Tuya Temp Password Service] Device {device_id} not found in multi_manager device_map")
+                else:
+                    LOGGER.error(f"[Tuya Temp Password Service] Account source {source} not found")
+            else:
+                LOGGER.error(f"[Tuya Temp Password Service] Could not find multi_manager for device {device_id}")
+        except Exception as e:
+            LOGGER.error(f"[Tuya Temp Password Service] Exception in _handle_get_temp_passwords: {e}", exc_info=True)
+        return None
+
+    async def _handle_delete_temp_password(
+        self, event: XTEventData
+    ) -> dict[str, Any] | None:
+        try:
+            source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
+            device_id_raw = event.data.get(CONF_DEVICE_ID, None)
+            device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
+            password_id = event.data.get("password_id", None)
+            LOGGER.info(f"[Tuya Temp Password Service] delete_temporary_password called for device={device_id}, password_id={password_id}")
+            if not device_id or password_id is None:
+                LOGGER.error(f"[Tuya Temp Password Service] Missing required parameters: device_id={device_id}, password_id={password_id}")
+                return None
+            if multi_manager := self._get_correct_multi_manager(source, device_id):
+                if account := multi_manager.get_account_by_name(source):
+                    target = account
+                    if not hasattr(target, "delete_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
+                        target = getattr(account.iot_account, "device_manager", account)
+
+                    if device := multi_manager.device_map.get(device_id):
+                        if hasattr(target, "delete_temporary_password"):
+                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                                target.delete_temporary_password,
+                                device,
+                                password_id,
+                            )
+                            return response
+                        else:
+                            LOGGER.error(f"[Tuya Temp Password Service] Account target {target} does not implement delete_temporary_password")
+                    else:
+                        LOGGER.error(f"[Tuya Temp Password Service] Device {device_id} not found in multi_manager device_map")
+                else:
+                    LOGGER.error(f"[Tuya Temp Password Service] Account source {source} not found")
+            else:
+                LOGGER.error(f"[Tuya Temp Password Service] Could not find multi_manager for device {device_id}")
+        except Exception as e:
+            LOGGER.error(f"[Tuya Temp Password Service] Exception in _handle_delete_temp_password: {e}", exc_info=True)
         return None
 
 
