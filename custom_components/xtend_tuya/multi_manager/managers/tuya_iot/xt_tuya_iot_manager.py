@@ -1107,7 +1107,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 )
                 LOGGER.info(f"[Tuya Lock Operate] Successfully operated door lock {device.id} (open={open}).")
                 if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                    self.multi_manager.hass.bus.async_fire(
+                    self.multi_manager.hass.bus.fire(
                         "xtend_tuya_lock_operated",
                         {"device_id": device.id, "open": open, "success": True, "response": lock_operation},
                     )
@@ -1117,7 +1117,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 f"[Tuya Lock Operate] Door operate failed for {device.id} (open={open}). Response: {lock_operation}"
             )
             if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                self.multi_manager.hass.bus.async_fire(
+                self.multi_manager.hass.bus.fire(
                     "xtend_tuya_lock_operated",
                     {"device_id": device.id, "open": open, "success": False, "response": lock_operation},
                 )
@@ -1158,7 +1158,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 )
                 LOGGER.info(f"[Tuya Lock Open] Successfully opened door lock {device.id}.")
                 if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                    self.multi_manager.hass.bus.async_fire(
+                    self.multi_manager.hass.bus.fire(
                         "xtend_tuya_lock_opened",
                         {"device_id": device.id, "success": True, "response": lock_operation},
                     )
@@ -1168,7 +1168,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 f"[Tuya Lock Open] Door open failed for {device.id}. Response: {lock_operation}"
             )
             if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                self.multi_manager.hass.bus.async_fire(
+                self.multi_manager.hass.bus.fire(
                     "xtend_tuya_lock_opened",
                     {"device_id": device.id, "success": False, "response": lock_operation},
                 )
@@ -1316,7 +1316,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 )
 
             if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                self.multi_manager.hass.bus.async_fire(
+                self.multi_manager.hass.bus.fire(
                     "xtend_tuya_temp_password_created",
                     {
                         "device_id": device.id,
@@ -1365,7 +1365,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
             res = api_to_use.delete(f"/v1.0/devices/{device.id}/door-lock/temp-passwords/{password_id}")
             LOGGER.info(f"[Tuya Temp Password] DELETE temp-passwords/{password_id} response for device {device.id}: {res}")
             if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
-                self.multi_manager.hass.bus.async_fire(
+                self.multi_manager.hass.bus.fire(
                     "xtend_tuya_temp_password_deleted",
                     {
                         "device_id": device.id,
