@@ -71,13 +71,6 @@ create_temporary_password:
     device:
       integration: xtend_tuya
   fields:
-    device_id:
-      required: false
-      name: "Device"
-      description: "The Tuya smart lock device."
-      selector:
-        device:
-          integration: xtend_tuya
     password:
       required: true
       name: "Password / PIN"
@@ -106,13 +99,6 @@ create_temporary_password:
       description: "Optional expiration date and time. Defaults to 24 hours from now if omitted."
       selector:
         datetime: {}
-    source:
-      required: false
-      name: "Account Source"
-      example: "tuya_iot"
-      default: "tuya_iot"
-      selector:
-        text: {}
 
 get_dynamic_passcode:
   name: "Get Dynamic Passcode"
@@ -120,21 +106,6 @@ get_dynamic_passcode:
   target:
     device:
       integration: xtend_tuya
-  fields:
-    device_id:
-      required: false
-      name: "Device"
-      description: "The Tuya smart lock device."
-      selector:
-        device:
-          integration: xtend_tuya
-    source:
-      required: false
-      name: "Account Source"
-      example: "tuya_iot"
-      default: "tuya_iot"
-      selector:
-        text: {}
 
 get_temporary_passwords:
   name: "Get Temporary Passwords"
@@ -142,21 +113,6 @@ get_temporary_passwords:
   target:
     device:
       integration: xtend_tuya
-  fields:
-    device_id:
-      required: false
-      name: "Device"
-      description: "The Tuya smart lock device."
-      selector:
-        device:
-          integration: xtend_tuya
-    source:
-      required: false
-      name: "Account Source"
-      example: "tuya_iot"
-      default: "tuya_iot"
-      selector:
-        text: {}
 
 delete_temporary_password:
   name: "Delete Temporary Password"
@@ -165,24 +121,10 @@ delete_temporary_password:
     device:
       integration: xtend_tuya
   fields:
-    device_id:
-      required: false
-      name: "Device"
-      description: "The Tuya smart lock device."
-      selector:
-        device:
-          integration: xtend_tuya
     password_id:
       required: true
       name: "Password ID"
       description: "The numeric ID of the temporary password to delete."
       example: "1179250913"
-      selector:
-        text: {}
-    source:
-      required: false
-      name: "Account Source"
-      example: "tuya_iot"
-      default: "tuya_iot"
       selector:
         text: {}

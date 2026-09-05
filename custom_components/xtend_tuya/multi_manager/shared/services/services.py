@@ -21,6 +21,7 @@ from ....util import (
     get_all_multi_managers,
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
     CONF_DEVICE_ID,
 )
@@ -260,12 +261,23 @@ class ServiceManager:
             )
 
     def _get_correct_multi_manager(
-        self, source: str, device_id: str
+        self, device_id: str
     ) -> mm.MultiManager | None:
         multi_manager_list = get_all_multi_managers(self.hass)
         for multi_manager in multi_manager_list:
             if multi_manager.device_map.get(device_id):
                 return multi_manager
+        return None
+
+    def _get_account_for_device(
+        self, multi_manager: mm.MultiManager, source: str | None
+    ) -> Any | None:
+        if source and (account := multi_manager.get_account_by_name(source)):
+            return account
+        if account := multi_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
+            return account
+        if hasattr(multi_manager, "accounts") and multi_manager.accounts:
+            return list(multi_manager.accounts.values())[0]
         return None
 
     async def _handle_get_camera_stream_url(
@@ -363,43 +375,56 @@ class ServiceManager:
             invalid_time_raw = event.data.get("invalid_time", None)
             effective_time = parse_time_to_millis(effective_time_raw)
             invalid_time = parse_time_to_millis(invalid_time_raw)
+
             LOGGER.info(
                 f"[Tuya Temp Password Service] Service called for device={device_id}, name='{name}', "
                 f"eff_time_raw={effective_time_raw} -> {effective_time}, inv_time_raw={invalid_time_raw} -> {invalid_time}"
             )
             if not device_id or not password:
-                LOGGER.error(f"[Tuya Temp Password Service] Missing required parameters: device_id={device_id}, password_provided={bool(password)}")
-                return None
-            if multi_manager := self._get_correct_multi_manager(source, device_id):
-                if account := multi_manager.get_account_by_name(source):
-                    target = account
-                    if not hasattr(target, "create_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
-                        target = getattr(account.iot_account, "device_manager", account)
+                raise HomeAssistantError("Missing required parameters: device_id and password are required.")
 
-                    if device := multi_manager.device_map.get(device_id):
-                        if hasattr(target, "create_temporary_password"):
-                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                                target.create_temporary_password,
-                                device,
-                                password,
-                                name,
-                                effective_time,
-                                invalid_time,
-                            )
-                            return response
-                        else:
-                            LOGGER.error(f"[Tuya Temp Password Service] Account target {target} does not implement create_temporary_password")
-                    else:
-                        LOGGER.error(f"[Tuya Temp Password Service] Device {device_id} not found in multi_manager device_map")
-                else:
-                    LOGGER.error(f"[Tuya Temp Password Service] Account source {source} not found")
-            else:
-                LOGGER.error(f"[Tuya Temp Password Service] Could not find multi_manager for device {device_id}")
+            multi_manager = self._get_correct_multi_manager(device_id)
+            if not multi_manager:
+                raise HomeAssistantError(f"Device '{device_id}' not found in Xtend Tuya integration.")
+
+            account = self._get_account_for_device(multi_manager, source)
+            if not account:
+                raise HomeAssistantError(f"No valid Tuya account found for device '{device_id}'.")
+
+            target = account
+            if not hasattr(target, "create_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
+                target = getattr(account.iot_account, "device_manager", account)
+
+            device = multi_manager.device_map.get(device_id)
+            if not device:
+                raise HomeAssistantError(f"Device object '{device_id}' not found in device map.")
+
+            if not hasattr(target, "create_temporary_password"):
+                raise HomeAssistantError(f"Account target '{target}' does not support create_temporary_password.")
+
+            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                target.create_temporary_password,
+                device,
+                password,
+                name,
+                effective_time,
+                invalid_time,
+            )
+
+            if isinstance(response, dict):
+                if not response.get("success", False):
+                    msg = response.get("msg") or response.get("error") or "Unknown error from Tuya Cloud"
+                    code = response.get("code")
+                    err_msg = f"Tuya API Error: {msg} (code {code})" if code else f"Tuya API Error: {msg}"
+                    LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
+                    raise HomeAssistantError(err_msg)
+
+            return response
+        except HomeAssistantError:
+            raise
         except Exception as e:
             LOGGER.error(f"[Tuya Temp Password Service] Exception in _handle_create_temp_password: {e}", exc_info=True)
-        return None
-
-
+            raise HomeAssistantError(f"Error creating temporary password: {e}") from e
 
     async def _handle_webrtc_sdp_exchange(
         self, event: XTEventData
@@ -410,7 +435,7 @@ class ServiceManager:
         channel = event.data.get(CONF_CHANNEL, None)
         if device_id is None or session_id is None:
             return None
-        multi_manager = self._get_correct_multi_manager(source, device_id)
+        multi_manager = self._get_correct_multi_manager(device_id)
         if multi_manager is None or device_id is None or session_id is None:
             return None
         match event.method:
@@ -418,7 +443,7 @@ class ServiceManager:
                 match event.content_type:
                     case "application/sdp":
                         if channel is not None:
-                            if account := multi_manager.get_account_by_name(source):
+                            if account := self._get_account_for_device(multi_manager, source):
                                 sdp_answer = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                                     account.get_webrtc_sdp_answer,
                                     device_id,
@@ -443,7 +468,7 @@ class ServiceManager:
             case "PATCH":
                 match event.content_type:
                     case "application/trickle-ice-sdpfrag":
-                        if account := multi_manager.get_account_by_name(source):
+                        if account := self._get_account_for_device(multi_manager, source):
                             patch_answer = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                                 account.send_webrtc_trickle_ice,
                                 device_id,
@@ -458,7 +483,7 @@ class ServiceManager:
                                 return response
                         return None
             case "DELETE":
-                if account := multi_manager.get_account_by_name(source):
+                if account := self._get_account_for_device(multi_manager, source):
                     delete_answer = (
                         await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                             account.delete_webrtc_session, device_id, session_id
@@ -480,33 +505,38 @@ class ServiceManager:
             device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
             LOGGER.info(f"[Tuya Dynamic Passcode Service] Service called for device={device_id}")
             if not device_id:
-                LOGGER.error(f"[Tuya Dynamic Passcode Service] Missing required parameter: device_id")
-                return None
-            if multi_manager := self._get_correct_multi_manager(source, device_id):
-                if account := multi_manager.get_account_by_name(source):
-                    target = account
-                    if not hasattr(target, "get_dynamic_password") and hasattr(account, "iot_account") and account.iot_account:
-                        target = getattr(account.iot_account, "device_manager", account)
+                raise HomeAssistantError("Missing required parameter: device_id.")
 
-                    if device := multi_manager.device_map.get(device_id):
-                        if hasattr(target, "get_dynamic_password"):
-                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                                target.get_dynamic_password,
-                                device,
-                            )
-                            async_dispatcher_send(self.hass, f"xtend_tuya_update_passcode_{device_id}")
-                            return response
-                        else:
-                            LOGGER.error(f"[Tuya Dynamic Passcode Service] Account target {target} does not implement get_dynamic_password")
-                    else:
-                        LOGGER.error(f"[Tuya Dynamic Passcode Service] Device {device_id} not found in multi_manager device_map")
-                else:
-                    LOGGER.error(f"[Tuya Dynamic Passcode Service] Account source {source} not found")
-            else:
-                LOGGER.error(f"[Tuya Dynamic Passcode Service] Could not find multi_manager for device {device_id}")
+            multi_manager = self._get_correct_multi_manager(device_id)
+            if not multi_manager:
+                raise HomeAssistantError(f"Device '{device_id}' not found in Xtend Tuya integration.")
+
+            account = self._get_account_for_device(multi_manager, source)
+            if not account:
+                raise HomeAssistantError(f"No valid Tuya account found for device '{device_id}'.")
+
+            target = account
+            if not hasattr(target, "get_dynamic_password") and hasattr(account, "iot_account") and account.iot_account:
+                target = getattr(account.iot_account, "device_manager", account)
+
+            device = multi_manager.device_map.get(device_id)
+            if not device:
+                raise HomeAssistantError(f"Device object '{device_id}' not found in device map.")
+
+            if not hasattr(target, "get_dynamic_password"):
+                raise HomeAssistantError(f"Account target '{target}' does not support get_dynamic_password.")
+
+            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                target.get_dynamic_password,
+                device,
+            )
+            async_dispatcher_send(self.hass, f"xtend_tuya_update_passcode_{device_id}")
+            return response
+        except HomeAssistantError:
+            raise
         except Exception as e:
             LOGGER.error(f"[Tuya Dynamic Passcode Service] Exception in _handle_get_dynamic_passcode: {e}", exc_info=True)
-        return None
+            raise HomeAssistantError(f"Error fetching dynamic passcode: {e}") from e
 
     async def _handle_get_temp_passwords(
         self, event: XTEventData
@@ -517,32 +547,37 @@ class ServiceManager:
             device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
             LOGGER.info(f"[Tuya Temp Password Service] get_temporary_passwords called for device={device_id}")
             if not device_id:
-                LOGGER.error(f"[Tuya Temp Password Service] Missing required parameter: device_id")
-                return None
-            if multi_manager := self._get_correct_multi_manager(source, device_id):
-                if account := multi_manager.get_account_by_name(source):
-                    target = account
-                    if not hasattr(target, "get_temporary_passwords") and hasattr(account, "iot_account") and account.iot_account:
-                        target = getattr(account.iot_account, "device_manager", account)
+                raise HomeAssistantError("Missing required parameter: device_id.")
 
-                    if device := multi_manager.device_map.get(device_id):
-                        if hasattr(target, "get_temporary_passwords"):
-                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                                target.get_temporary_passwords,
-                                device,
-                            )
-                            return response
-                        else:
-                            LOGGER.error(f"[Tuya Temp Password Service] Account target {target} does not implement get_temporary_passwords")
-                    else:
-                        LOGGER.error(f"[Tuya Temp Password Service] Device {device_id} not found in multi_manager device_map")
-                else:
-                    LOGGER.error(f"[Tuya Temp Password Service] Account source {source} not found")
-            else:
-                LOGGER.error(f"[Tuya Temp Password Service] Could not find multi_manager for device {device_id}")
+            multi_manager = self._get_correct_multi_manager(device_id)
+            if not multi_manager:
+                raise HomeAssistantError(f"Device '{device_id}' not found in Xtend Tuya integration.")
+
+            account = self._get_account_for_device(multi_manager, source)
+            if not account:
+                raise HomeAssistantError(f"No valid Tuya account found for device '{device_id}'.")
+
+            target = account
+            if not hasattr(target, "get_temporary_passwords") and hasattr(account, "iot_account") and account.iot_account:
+                target = getattr(account.iot_account, "device_manager", account)
+
+            device = multi_manager.device_map.get(device_id)
+            if not device:
+                raise HomeAssistantError(f"Device object '{device_id}' not found in device map.")
+
+            if not hasattr(target, "get_temporary_passwords"):
+                raise HomeAssistantError(f"Account target '{target}' does not support get_temporary_passwords.")
+
+            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                target.get_temporary_passwords,
+                device,
+            )
+            return response
+        except HomeAssistantError:
+            raise
         except Exception as e:
             LOGGER.error(f"[Tuya Temp Password Service] Exception in _handle_get_temp_passwords: {e}", exc_info=True)
-        return None
+            raise HomeAssistantError(f"Error fetching temporary passwords: {e}") from e
 
     async def _handle_delete_temp_password(
         self, event: XTEventData
@@ -554,32 +589,46 @@ class ServiceManager:
             password_id = event.data.get("password_id", None)
             LOGGER.info(f"[Tuya Temp Password Service] delete_temporary_password called for device={device_id}, password_id={password_id}")
             if not device_id or password_id is None:
-                LOGGER.error(f"[Tuya Temp Password Service] Missing required parameters: device_id={device_id}, password_id={password_id}")
-                return None
-            if multi_manager := self._get_correct_multi_manager(source, device_id):
-                if account := multi_manager.get_account_by_name(source):
-                    target = account
-                    if not hasattr(target, "delete_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
-                        target = getattr(account.iot_account, "device_manager", account)
+                raise HomeAssistantError("Missing required parameters: device_id and password_id are required.")
 
-                    if device := multi_manager.device_map.get(device_id):
-                        if hasattr(target, "delete_temporary_password"):
-                            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                                target.delete_temporary_password,
-                                device,
-                                password_id,
-                            )
-                            return response
-                        else:
-                            LOGGER.error(f"[Tuya Temp Password Service] Account target {target} does not implement delete_temporary_password")
-                    else:
-                        LOGGER.error(f"[Tuya Temp Password Service] Device {device_id} not found in multi_manager device_map")
-                else:
-                    LOGGER.error(f"[Tuya Temp Password Service] Account source {source} not found")
-            else:
-                LOGGER.error(f"[Tuya Temp Password Service] Could not find multi_manager for device {device_id}")
+            multi_manager = self._get_correct_multi_manager(device_id)
+            if not multi_manager:
+                raise HomeAssistantError(f"Device '{device_id}' not found in Xtend Tuya integration.")
+
+            account = self._get_account_for_device(multi_manager, source)
+            if not account:
+                raise HomeAssistantError(f"No valid Tuya account found for device '{device_id}'.")
+
+            target = account
+            if not hasattr(target, "delete_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
+                target = getattr(account.iot_account, "device_manager", account)
+
+            device = multi_manager.device_map.get(device_id)
+            if not device:
+                raise HomeAssistantError(f"Device object '{device_id}' not found in device map.")
+
+            if not hasattr(target, "delete_temporary_password"):
+                raise HomeAssistantError(f"Account target '{target}' does not support delete_temporary_password.")
+
+            response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                target.delete_temporary_password,
+                device,
+                password_id,
+            )
+
+            if isinstance(response, dict):
+                if not response.get("success", False):
+                    msg = response.get("msg") or response.get("error") or "Unknown error from Tuya Cloud"
+                    code = response.get("code")
+                    err_msg = f"Tuya API Error: {msg} (code {code})" if code else f"Tuya API Error: {msg}"
+                    LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
+                    raise HomeAssistantError(err_msg)
+
+            return response
+        except HomeAssistantError:
+            raise
         except Exception as e:
             LOGGER.error(f"[Tuya Temp Password Service] Exception in _handle_delete_temp_password: {e}", exc_info=True)
-        return None
+            raise HomeAssistantError(f"Error deleting temporary password: {e}") from e
 
 
