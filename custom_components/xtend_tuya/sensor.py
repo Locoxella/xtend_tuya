@@ -2755,25 +2755,27 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        self._update_passcode()
+        await self._async_update_passcode()
         self.async_on_remove(
             async_track_time_change(
-                self.hass, self._async_update_passcode, second=[0, 30]
+                self.hass, self._async_update_passcode_callback, second=[0, 30]
             )
         )
 
     @callback
-    def _async_update_passcode(self, _=None) -> None:
-        self._update_passcode()
-        self.async_write_ha_state()
+    def _async_update_passcode_callback(self, _=None) -> None:
+        self.hass.async_create_task(self._async_update_passcode())
 
-    def _update_passcode(self) -> None:
+    async def _async_update_passcode(self) -> None:
         if account := self.device_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
             if hasattr(account, "get_dynamic_password"):
-                res = account.get_dynamic_password(self.device)
+                res = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                    account.get_dynamic_password, self.device
+                )
                 if res and isinstance(res, dict):
                     self._passcode = res.get("dynamic_password", None)
                     self._valid_until = res.get("valid_until", None)
+                    self.async_write_ha_state()
 
     @property
     def native_value(self) -> str | None:
@@ -2785,5 +2787,6 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
             "valid_until": self._valid_until,
             "device_id": self.device.id,
         }
+
 
 

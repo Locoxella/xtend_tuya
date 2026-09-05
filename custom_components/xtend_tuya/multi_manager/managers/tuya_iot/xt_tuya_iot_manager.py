@@ -1174,15 +1174,35 @@ class XTIOTDeviceManager(TuyaDeviceManager):
     ) -> dict[str, Any] | None:
         """Get or calculate 5-minute dynamic password for lock."""
         api_to_use = api or self.api
-        res = api_to_use.get(f"/v1.0/devices/{device.id}/door-lock/dynamic-password")
-        if res and res.get("success", False):
-            return res.get("result", {})
 
-        res = api_to_use.get(f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords")
-        if res and res.get("success", False):
-            return res.get("result", {})
+        try:
+            res = api_to_use.get(f"/v1.0/devices/{device.id}/door-lock/dynamic-password")
+            if res and res.get("success", False):
+                result = res.get("result", {})
+                if isinstance(result, str):
+                    return {"dynamic_password": result, "valid_until": int(time.time()) + 300}
+                elif isinstance(result, dict):
+                    passcode = result.get("dynamic_password") or result.get("password") or result.get("code")
+                    valid_until = result.get("valid_until") or result.get("expire_time")
+                    if passcode:
+                        return {"dynamic_password": str(passcode), "valid_until": valid_until}
+
+            res = api_to_use.get(f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords")
+            if res and res.get("success", False):
+                result = res.get("result", {})
+                if isinstance(result, str):
+                    return {"dynamic_password": result, "valid_until": int(time.time()) + 300}
+                elif isinstance(result, dict):
+                    passcode = result.get("dynamic_password") or result.get("password") or result.get("code")
+                    valid_until = result.get("valid_until") or result.get("expire_time")
+                    if passcode:
+                        return {"dynamic_password": str(passcode), "valid_until": valid_until}
+        except Exception as e:
+            LOGGER.warning(f"Failed to fetch Cloud dynamic password: {e}")
 
         local_key = getattr(device, "local_key", "") or ""
+        if not local_key and hasattr(device, "status"):
+            local_key = device.status.get("local_key", "")
         if local_key:
             code = self._calculate_offline_dynamic_passcode(local_key, device.id)
             if code:
@@ -1193,6 +1213,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     "valid_until": window_end,
                 }
         return None
+
 
     @staticmethod
     def _calculate_offline_dynamic_passcode(local_key: str, device_id: str) -> str | None:
