@@ -71,7 +71,7 @@
         },
         "password": {
           "name": "Mot de passe / Code PIN",
-          "description": "Le code numérique de 6 à 8 chiffres."
+          "description": "The 6-8 digit numeric passcode to create (e.g. 1266455)."
         },
         "name": {
           "name": "Nom / Libellé",

@@ -433,12 +433,6 @@ class ServiceManager:
                 if not hasattr(target, "create_temporary_password"):
                     raise HomeAssistantError(f"Account target '{target}' does not support create_temporary_password.")
 
-                if getattr(device, "category", None) in ("ms", "videolock") and len(str(password)) != 7:
-                    raise HomeAssistantError(
-                        f"La cerradura '{getattr(device, 'name', dev_id)}' (categoría {getattr(device, 'category', 'ms')}) "
-                        f"requiere un PIN numérico de exactamente 7 dígitos (ingresaste {len(str(password))} dígitos: '{password}')."
-                    )
-
                 response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                     target.create_temporary_password,
                     device,
@@ -448,27 +442,30 @@ class ServiceManager:
                     invalid_time,
                 )
 
+                dev_display_name = getattr(device, "name", None) or dev_id
+                dev_label = f"'{dev_display_name}' ({dev_id})" if dev_display_name != dev_id else f"'{dev_id}'"
+
                 if isinstance(response, dict):
                     if not response.get("success", False):
                         msg = response.get("msg") or response.get("error") or "Unknown error from Tuya Cloud"
                         code = response.get("code")
                         if code == 28840002 or "No permissions" in str(msg):
                             err_msg = (
-                                f"Tuya API Error for device '{dev_id}': No permissions (code {code}). "
+                                f"Tuya API Error for device {dev_label}: No permissions (code {code}). "
                                 "Falta autorizar el servicio 'Smart Lock Service' en iot.tuya.com (Cloud > Development > Tu Proyecto > Service API)."
                             )
                         elif code == 2314 or "password length" in str(msg).lower():
                             err_msg = (
-                                f"Tuya API Error for device '{dev_id}': Longitud de clave incorrecta (code {code}). "
+                                f"Tuya API Error for device {dev_label}: Longitud de clave incorrecta (code {code}). "
                                 f"Esta cerradura requiere un PIN numérico de 7 dígitos exactos (ingresaste {len(str(password))} dígitos)."
                             )
                         elif code == 1109:
                             err_msg = (
-                                f"Tuya API Error for device '{dev_id}': Parámetros inválidos (code 1109). "
-                                "Verifica que el PIN tenga 7 dígitos numéricos y fechas válidas."
+                                f"Tuya API Error for device {dev_label}: Parámetros inválidos (code 1109). "
+                                "Verifica que el PIN y las fechas sean válidos para esta cerradura."
                             )
                         else:
-                            err_msg = f"Tuya API Error for device '{dev_id}': {msg} (code {code})" if code else f"Tuya API Error for device '{dev_id}': {msg}"
+                            err_msg = f"Tuya API Error for device {dev_label}: {msg} (code {code})" if code else f"Tuya API Error for device {dev_label}: {msg}"
                         LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
                         raise HomeAssistantError(err_msg)
 

@@ -71,7 +71,7 @@
         },
         "password": {
           "name": "Passwort / PIN",
-          "description": "Der 6-8-stellige numerische Passcode."
+          "description": "The 6-8 digit numeric passcode to create (e.g. 1266455)."
         },
         "name": {
           "name": "Name / Bezeichnung",

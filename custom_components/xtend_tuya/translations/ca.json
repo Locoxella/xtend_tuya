@@ -3141,7 +3141,7 @@
         },
         "password": {
           "name": "Password / PIN",
-          "description": "Numeric passcode to create (7 digits required for residential locks, e.g. 1266455)."
+          "description": "The 6-8 digit numeric passcode to create (e.g. 1266455)."
         },
         "name": {
           "name": "Name / Alias",
