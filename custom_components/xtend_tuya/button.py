@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import cast, Any, Self
 from dataclasses import dataclass
 from homeassistant.const import EntityCategory, Platform
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
