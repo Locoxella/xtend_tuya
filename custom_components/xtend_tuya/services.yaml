@@ -98,3 +98,17 @@ create_temporary_password:
       required: false
       example: "tuya_iot"
       default: "tuya_iot"
+
+get_dynamic_passcode:
+  name: "Get Dynamic Passcode"
+  description: "Fetches a new 5-minute dynamic passcode for a Tuya smart lock on demand and updates the entity."
+  fields:
+    device_id:
+      required: true
+      name: "Device ID"
+      description: "The Tuya device ID of the smart lock."
+      example: "eb1234567890abcdef"
+    source:
+      required: false
+      example: "tuya_iot"
+      default: "tuya_iot"

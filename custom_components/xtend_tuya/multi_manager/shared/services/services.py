@@ -20,6 +20,7 @@ from ..threading import (
 from ....util import (
     get_all_multi_managers,
 )
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.const import (
     CONF_DEVICE_ID,
 )
@@ -92,6 +93,14 @@ SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_GET_DYNAMIC_PASSCODE = "get_dynamic_passcode"
+SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Optional(CONF_SOURCE): cv.string,
+    }
+)
+
 
 
 class ServiceManager:
@@ -150,6 +159,15 @@ class ServiceManager:
             SERVICE_CREATE_TEMP_PASSWORD,
             self._handle_create_temp_password,
             SERVICE_CREATE_TEMP_PASSWORD_SCHEMA,
+            True,
+            True,
+            False,
+        )
+        self._register_service(
+            DOMAIN,
+            SERVICE_GET_DYNAMIC_PASSCODE,
+            self._handle_get_dynamic_passcode,
+            SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA,
             True,
             True,
             False,
@@ -363,3 +381,27 @@ class ServiceManager:
                         )
                         return response
                 return None
+
+    async def _handle_get_dynamic_passcode(
+        self, event: XTEventData
+    ) -> dict[str, Any] | None:
+        source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
+        device_id = event.data.get(CONF_DEVICE_ID, None)
+        if not device_id:
+            return None
+        if multi_manager := self._get_correct_multi_manager(source, device_id):
+            if account := multi_manager.get_account_by_name(source):
+                target = account
+                if not hasattr(target, "get_dynamic_password") and hasattr(account, "iot_account") and account.iot_account:
+                    target = getattr(account.iot_account, "device_manager", account)
+
+                if device := multi_manager.device_map.get(device_id):
+                    if hasattr(target, "get_dynamic_password"):
+                        response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                            target.get_dynamic_password,
+                            device,
+                        )
+                        async_dispatcher_send(self.hass, f"xtend_tuya_update_passcode_{device_id}")
+                        return response
+        return None
+
