@@ -103,6 +103,41 @@ SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA = vol.Schema(
 
 
 
+def parse_time_to_millis(val: Any) -> int | None:
+    """Parse integer, float, string datetime or timestamp into milliseconds epoch integer."""
+    if val is None or val == "":
+        return None
+    if isinstance(val, (int, float)):
+        if val < 100000000000:
+            return int(val * 1000)
+        return int(val)
+    if isinstance(val, str):
+        val_str = val.strip()
+        try:
+            num = float(val_str)
+            if num < 100000000000:
+                return int(num * 1000)
+            return int(num)
+        except ValueError:
+            pass
+
+        try:
+            from homeassistant.util import dt as dt_util
+            if parsed_dt := dt_util.parse_datetime(val_str):
+                return int(parsed_dt.timestamp() * 1000)
+        except Exception:
+            pass
+
+        try:
+            from datetime import datetime
+            parsed_dt = datetime.fromisoformat(val_str)
+            return int(parsed_dt.timestamp() * 1000)
+        except Exception as e:
+            LOGGER.warning(f"[Tuya Temp Password] Could not parse date string '{val_str}': {e}")
+            return None
+    return None
+
+
 class ServiceManager:
     def __init__(self, multi_manager: mm.MultiManager) -> None:
         self.multi_manager = multi_manager
@@ -279,41 +314,6 @@ class ServiceManager:
                 ):
                     return debug_output
         return None
-
-def parse_time_to_millis(val: Any) -> int | None:
-    """Parse integer, float, string datetime or timestamp into milliseconds epoch integer."""
-    if val is None or val == "":
-        return None
-    if isinstance(val, (int, float)):
-        if val < 100000000000:
-            return int(val * 1000)
-        return int(val)
-    if isinstance(val, str):
-        val_str = val.strip()
-        try:
-            num = float(val_str)
-            if num < 100000000000:
-                return int(num * 1000)
-            return int(num)
-        except ValueError:
-            pass
-
-        try:
-            from homeassistant.util import dt as dt_util
-            if parsed_dt := dt_util.parse_datetime(val_str):
-                return int(parsed_dt.timestamp() * 1000)
-        except Exception:
-            pass
-
-        try:
-            from datetime import datetime
-            parsed_dt = datetime.fromisoformat(val_str)
-            return int(parsed_dt.timestamp() * 1000)
-        except Exception as e:
-            LOGGER.warning(f"[Tuya Temp Password] Could not parse date string '{val_str}': {e}")
-            return None
-    return None
-
 
     async def _handle_create_temp_password(
         self, event: XTEventData
