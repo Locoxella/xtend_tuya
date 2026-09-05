@@ -1001,15 +1001,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "Sirenläge",
-        "state": {
-          "alarm_light": "Ljus",
-          "alarm_sound": "Ljud",
-          "alarm_sound_light": "Ljud och ljus",
-          "normal": "Normal"
-        }
-      },
       "target_humidity": {
         "name": "Målfuktighet"
       },
@@ -1448,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Status",
         "state": {
-          "clean": "Städar",
           "empty": "Tömmer",
           "standby": "Viloläge",
           "cleaning": "Cleaning",
@@ -1483,14 +1473,8 @@
       "depth": {
         "name": "Djup"
       },
-      "dew_point_temperature": {
-        "name": "Daggpunkt"
-      },
       "duster_cloth_life": {
         "name": "Dammduk livslängd"
-      },
-      "feels_like_temperature": {
-        "name": "Känns som"
       },
       "filter_duration": {
         "name": "Filtertid"
@@ -1506,9 +1490,6 @@
       },
       "gas": {
         "name": "Gas"
-      },
-      "heat_index_temperature": {
-        "name": "Värme index"
       },
       "humidity": {
         "name": "Luftfuktighet"
@@ -1714,18 +1695,11 @@
       "water_time": {
         "name": "Vattenförbrukningstid"
       },
-      "wind_chill_index_temperature": {
-        "name": "Vindkylnings index"
-      },
       "wind_direction": {
         "name": "Vindriktning"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3045,10 +3019,6 @@
     }
   },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tuya entiteten `{entity}` är föråldrad och ersatt av en ny ventil entitet.\nUppdatera dina instrumentpaneler, automatiseringar och skript, inaktivera `{entity}` och ladda om integrationen/starta om Home Assistant för att åtgärda problemet.",
-      "title": "{name} är föråldrat"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

@@ -1174,7 +1174,6 @@
       },
       "cat_litter_box_status": {
         "state": {
-          "clean": "czyszczenie",
           "cleaning": "Cleaning",
           "clock": "Clock",
           "deodorization": "Deodorization",
@@ -1191,15 +1190,6 @@
       },
       "current": {
         "name": "Natężenie prądu"
-      },
-      "dew_point_temperature": {
-        "name": "Punkt rosy"
-      },
-      "feels_like_temperature": {
-        "name": "odczuwalna"
-      },
-      "heat_index_temperature": {
-        "name": "Wskaźnik ciepła"
       },
       "humidity": {
         "name": "Wilgotność"
@@ -1255,11 +1245,7 @@
         "name": "Napięcie"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"

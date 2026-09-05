@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Bag full"
-      },
       "carbon_dioxide": {
         "name": "Carbon dioxide"
       },
       "carbon_monoxide": {
         "name": "Carbon monoxide"
-      },
-      "cover_off": {
-        "name": "Cover off"
       },
       "defrost": {
         "name": "Defrost"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Doorbell message"
-      },
-      "doorbell_picture": {
-        "name": "Doorbell picture"
-      },
       "numbered_button": {
         "name": "Button {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
           "power_on": "On"
         }
       },
-      "siren_mode": {
-        "name": "Siren mode",
-        "state": {
-          "alarm_light": "Light",
-          "alarm_sound": "Sound",
-          "alarm_sound_light": "Sound & light",
-          "normal": "Normal"
-        }
-      },
       "target_humidity": {
         "name": "Target humidity"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Status",
         "state": {
-          "clean": "Cleaning",
           "empty": "Emptying",
           "level": "Levelling",
           "sleep": "Sleeping",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "Depth"
       },
-      "dew_point_temperature": {
-        "name": "Dew point"
-      },
       "duster_cloth_life": {
         "name": "Duster cloth lifetime"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "Excretion times (day)"
-      },
-      "feels_like_temperature": {
-        "name": "Feels like"
       },
       "filter_duration": {
         "name": "Filter duration"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "Gas"
-      },
-      "heat_index_temperature": {
-        "name": "Heat index"
       },
       "humidity": {
         "name": "Humidity"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "Water usage duration"
       },
-      "wind_chill_index_temperature": {
-        "name": "Wind chill index"
-      },
       "wind_direction": {
         "name": "Wind direction"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Unable to process action as the device does not provide a corresponding function code (expected one of {expected} in {available})."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "The Tuya entity `{entity}` is deprecated, replaced by a new valve entity.\nPlease update your dashboards, automations and scripts, disable `{entity}` and reload the integration/restart Home Assistant to fix this issue.",
-      "title": "{name} is deprecated"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

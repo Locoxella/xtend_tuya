@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Mála lán"
-      },
       "carbon_dioxide": {
         "name": "Dé-ocsaíd charbóin"
       },
       "carbon_monoxide": {
         "name": "Aonocsaíd charbóin"
-      },
-      "cover_off": {
-        "name": "Clúdaigh"
       },
       "defrost": {
         "name": "Díreoite"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Teachtaireacht cloigín dorais"
-      },
-      "doorbell_picture": {
-        "name": "Pictiúr clog dorais"
-      },
       "numbered_button": {
         "name": "Cnaipe {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "Mód siréin",
-        "state": {
-          "alarm_light": "Solas",
-          "alarm_sound": "Fuaim",
-          "alarm_sound_light": "Fuaim & solas",
-          "normal": "Gnáth"
-        }
-      },
       "target_humidity": {
         "name": "Taise sprice"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Stádas",
         "state": {
-          "clean": "Glanadh",
           "empty": "Ag folmhú",
           "level": "Leibhéalú",
           "sleep": "Codladh",
@@ -1495,17 +1473,11 @@
       "depth": {
         "name": "Doimhneacht"
       },
-      "dew_point_temperature": {
-        "name": "Pointe drúchta"
-      },
       "duster_cloth_life": {
         "name": "Saolré éadach duster"
       },
       "excretion_times_day": {
         "name": "Amanna eisfhearadh (i rith an lae)"
-      },
-      "feels_like_temperature": {
-        "name": "Mothaíonn sé cosúil"
       },
       "filter_duration": {
         "name": "Fad an scagaire"
@@ -1521,9 +1493,6 @@
       },
       "gas": {
         "name": "Gás"
-      },
-      "heat_index_temperature": {
-        "name": "Innéacs teasa"
       },
       "humidity": {
         "name": "Taise"
@@ -1744,18 +1713,11 @@
       "water_time": {
         "name": "Fad úsáide uisce"
       },
-      "wind_chill_index_temperature": {
-        "name": "Innéacs fuaraithe gaoithe"
-      },
       "wind_direction": {
         "name": "Treo na gaoithe"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Ní féidir an gníomh a phróiseáil mar nach soláthraíonn an gléas cód feidhme comhfhreagrach (bhíothas ag súil le ceann de {expected} i {available})."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tá an t-eintiteas Tuya `{entity}` imithe i léig, agus tá eintiteas comhla nua ina áit.\nNuashonraigh do phainéil rialaithe, uathoibrithe agus scripteanna, díchumasaigh `{entity}` agus athlódáil an comhtháthú/atosaigh Home Assistant chun an fhadhb seo a réiteach.",
-      "title": "Tá {name} imithe i léig"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

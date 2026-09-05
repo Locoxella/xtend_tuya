@@ -985,15 +985,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "Λειτουργία σειρήνας",
-        "state": {
-          "alarm_light": "Φως",
-          "alarm_sound": "Ηχος",
-          "alarm_sound_light": "Ηχος & φως",
-          "normal": "Κανονικό"
-        }
-      },
       "target_humidity": {
         "name": "Επιθυμητή υγρασία"
       },
@@ -1470,14 +1461,8 @@
       "current_temperature": {
         "name": "Τρέχουσα θερμοκρασία"
       },
-      "dew_point_temperature": {
-        "name": "Σημείο δρόσου"
-      },
       "duster_cloth_life": {
         "name": "Διάρκεια ζωής ξεσκονόπανου"
-      },
-      "feels_like_temperature": {
-        "name": "Αίσθηση σαν"
       },
       "filter_duration": {
         "name": "Διάρκεια φίλτρου"
@@ -1493,9 +1478,6 @@
       },
       "gas": {
         "name": "Αέριο"
-      },
-      "heat_index_temperature": {
-        "name": "Δείκτης ζέστης"
       },
       "humidity": {
         "name": "Υγρασία"
@@ -1681,11 +1663,7 @@
         "name": "Κατεύθυνση ανέμου"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3038,11 +3016,6 @@
       "countdown_8": {
         "name": "Countdown 8"
       }
-    }
-  },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Δεν είναι δυνατή η επεξεργασία της ενέργειας, καθώς η συσκευή δεν παρέχει αντίστοιχο κωδικό λειτουργίας (αναμενόταν ένας από τους {expected} στο {available})."
     }
   },
   "options": {

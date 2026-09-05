@@ -932,11 +932,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "state": {
-          "normal": "רגיל"
-        }
-      },
       "target_humidity": {
         "name": "יעד לחות"
       },
@@ -1575,11 +1570,7 @@
         "name": "כיוון הרוח"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"

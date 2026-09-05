@@ -923,15 +923,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "Sirenemodus",
-        "state": {
-          "alarm_light": "Licht",
-          "alarm_sound": "Geluid",
-          "alarm_sound_light": "Licht en geluid",
-          "normal": "Normaal"
-        }
-      },
       "target_humidity": {
         "name": "Doelluchtvochtigheid"
       },
@@ -1422,14 +1413,8 @@
       "current_temperature": {
         "name": "Huidige temperatuur"
       },
-      "dew_point_temperature": {
-        "name": "Dauwpunt"
-      },
       "duster_cloth_life": {
         "name": "Levensduur stofdoek"
-      },
-      "feels_like_temperature": {
-        "name": "Voelt als"
       },
       "filter_life": {
         "name": "Levensduur filter"
@@ -1609,11 +1594,7 @@
         "name": "Windrichting"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"

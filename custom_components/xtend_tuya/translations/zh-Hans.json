@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "满袋"
-      },
       "carbon_dioxide": {
         "name": "二氧化碳"
       },
       "carbon_monoxide": {
         "name": "一氧化碳"
-      },
-      "cover_off": {
-        "name": "盖住"
       },
       "defrost": {
         "name": "除霜"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "门铃消息"
-      },
-      "doorbell_picture": {
-        "name": "门铃图片"
-      },
       "numbered_button": {
         "name": "按钮 {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "警笛模式",
-        "state": {
-          "alarm_light": "灯光",
-          "alarm_sound": "声音",
-          "alarm_sound_light": "声光",
-          "normal": "正常"
-        }
-      },
       "target_humidity": {
         "name": "设定湿度"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "状态",
         "state": {
-          "clean": "清洁中",
           "empty": "清空中",
           "level": "调平中",
           "sleep": "休眠中",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "深度"
       },
-      "dew_point_temperature": {
-        "name": "露点"
-      },
       "duster_cloth_life": {
         "name": "除尘布寿命"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "排泄次数（天）"
-      },
-      "feels_like_temperature": {
-        "name": "体感"
       },
       "filter_duration": {
         "name": "过滤时长"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "燃气"
-      },
-      "heat_index_temperature": {
-        "name": "热度指数"
       },
       "humidity": {
         "name": "湿度"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "用水时长"
       },
-      "wind_chill_index_temperature": {
-        "name": "风寒指数"
-      },
       "wind_direction": {
         "name": "风向"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "无法处理动作，因为设备未提供相应的功能代码（应当是 {available} 中的 {expected} 之一） 。"
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tuya 实体 “{entity}” 已弃用，由新的阀门实体取代。\n请更新您的仪表板、自动化和脚本，禁用 “{entity}” 并重新加载集成/重新启动 Home Assistant 以解决此问题。",
-      "title": "“{name}”已弃用"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

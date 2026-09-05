@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Zsák tele"
-      },
       "carbon_dioxide": {
         "name": "Szén-dioxid (CO₂)"
       },
       "carbon_monoxide": {
         "name": "Szén-monoxid (CO)"
-      },
-      "cover_off": {
-        "name": "Fedél nyitva"
       },
       "defrost": {
         "name": "Jégmentesítés"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Csengő üzenet"
-      },
-      "doorbell_picture": {
-        "name": "Csengő fénykép"
-      },
       "numbered_button": {
         "name": "Gomb {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
           "power_on": "Be"
         }
       },
-      "siren_mode": {
-        "name": "Sziréna mód",
-        "state": {
-          "alarm_light": "Fény",
-          "alarm_sound": "Hang",
-          "alarm_sound_light": "Hang és fény",
-          "normal": "Normál"
-        }
-      },
       "target_humidity": {
         "name": "Cél páratartalom"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Állapot",
         "state": {
-          "clean": "Tisztítás",
           "empty": "Ürítés",
           "level": "Egyengetés",
           "sleep": "Alvó",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "Mélység"
       },
-      "dew_point_temperature": {
-        "name": "Harmatpont"
-      },
       "duster_cloth_life": {
         "name": "Porrongy élettartam"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "Ürítések száma (napi)"
-      },
-      "feels_like_temperature": {
-        "name": "Hőérzet"
       },
       "filter_duration": {
         "name": "Szűrő élettartama"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "Gáz"
-      },
-      "heat_index_temperature": {
-        "name": "Hőindex"
       },
       "humidity": {
         "name": "Páratartalom"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "Vízhasználat időtartama"
       },
-      "wind_chill_index_temperature": {
-        "name": "Szélhűtési index"
-      },
       "wind_direction": {
         "name": "Szélirány"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "A művelet nem hajtható végre, mivel az eszköz nem biztosítja a megfelelő funkciókulcsot (a következők egyike várt: {expected} a következőkből: {available})."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "A Tuya entitás `{entity}` elavult, egy új szelep entitás váltotta fel.\nKérjük, frissítse az irányítópultokat, automatizálásokat és szkripteket, tiltsa le a `{entity}` entitást és töltse újra az integrációt/indítsa újra a Home Assistantot a probléma megoldásához.",
-      "title": "{name} elavult"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

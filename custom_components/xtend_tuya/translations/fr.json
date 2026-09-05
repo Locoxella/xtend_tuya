@@ -963,11 +963,6 @@
           "memory": "Remember last state"
         }
       },
-      "siren_mode": {
-        "state": {
-          "normal": "Normal"
-        }
-      },
       "target_humidity": {
         "name": "Humidité cible"
       },
@@ -1426,11 +1421,7 @@
     },
     "sensor": {
       "dynamic_passcode": {
-        "name": "Code d'accès dynamique",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Code d'accès dynamique"
       },
       "air_pressure": {
         "name": "Pression atmosphérique"

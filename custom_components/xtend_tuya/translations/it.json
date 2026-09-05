@@ -94,17 +94,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Borsa piena"
-      },
       "carbon_dioxide": {
         "name": "Anidride carbonica"
       },
       "carbon_monoxide": {
         "name": "Monossido di carbonio"
-      },
-      "cover_off": {
-        "name": "Coperchio rimosso"
       },
       "defrost": {
         "name": "Sbrinamento"
@@ -970,15 +964,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "Modalità sirena",
-        "state": {
-          "alarm_light": "Luce",
-          "alarm_sound": "Suono",
-          "alarm_sound_light": "Suono e luce",
-          "normal": "Normale"
-        }
-      },
       "target_humidity": {
         "name": "Umidità desiderata"
       },
@@ -1382,11 +1367,7 @@
     },
     "sensor": {
       "dynamic_passcode": {
-        "name": "Codice di accesso dinamico",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Codice di accesso dinamico"
       },
       "air_pressure": {
         "name": "Pressione dell'aria"
@@ -1433,7 +1414,6 @@
       "cat_litter_box_status": {
         "name": "Stato",
         "state": {
-          "clean": "Pulizia",
           "empty": "Svuotamento",
           "level": "Livellamento",
           "sleep": "Dormiente",

@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "バッグ満杯"
-      },
       "carbon_dioxide": {
         "name": "二酸化炭素"
       },
       "carbon_monoxide": {
         "name": "一酸化炭素"
-      },
-      "cover_off": {
-        "name": "カバーオフ"
       },
       "defrost": {
         "name": "解凍"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "ドアベルメッセージ"
-      },
-      "doorbell_picture": {
-        "name": "ドアベルの写真"
-      },
       "numbered_button": {
         "name": "ボタン {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
         },
         "name": "Power on behavior"
       },
-      "siren_mode": {
-        "name": "サイレンモード",
-        "state": {
-          "alarm_light": "ライト",
-          "alarm_sound": "サウンド",
-          "alarm_sound_light": "サウンド＆ライト",
-          "normal": "ノーマル"
-        }
-      },
       "target_humidity": {
         "name": "設定湿度"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "状態",
         "state": {
-          "clean": "クリーニング",
           "empty": "空にする",
           "level": "レベリング",
           "sleep": "スリーピング",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "深さ"
       },
-      "dew_point_temperature": {
-        "name": "露点温度"
-      },
       "duster_cloth_life": {
         "name": "ダスタークロスの寿命"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "排泄回数（日）"
-      },
-      "feels_like_temperature": {
-        "name": "体感温度"
       },
       "filter_duration": {
         "name": "フィルター期間"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "ガス"
-      },
-      "heat_index_temperature": {
-        "name": "暑さ指数"
       },
       "humidity": {
         "name": "湿度"
@@ -1744,18 +1713,11 @@
       "water_time": {
         "name": "水使用期間"
       },
-      "wind_chill_index_temperature": {
-        "name": "風冷指数"
-      },
       "wind_direction": {
         "name": "風向き"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "デバイスが対応する機能コードを提供しないため、アクションを処理できません（次のいずれかが必要です） {expected} で {available}）。"
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tuya エンティティ `{entity}` は非推奨となり、新しいバルブエンティティに置き換えられました。この問題を解決するには、ダッシュボード、オートメーション、スクリプトを更新し、`{entity}` を無効にして、統合を再読み込みするか、 Home Assistantを再起動してください。",
-      "title": "{name} 非推奨です"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

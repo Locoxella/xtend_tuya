@@ -1512,11 +1512,7 @@
         "name": "Vedenpinnan korkeus"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3020,11 +3016,6 @@
       "valve": {
         "name": "Valve"
       }
-    }
-  },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Toimintaa ei voida käsitellä, koska laite ei anna vastaavaa toimintokoodia (odotettu toimintokoodi {expected} {available}:ssa)."
     }
   },
   "options": {

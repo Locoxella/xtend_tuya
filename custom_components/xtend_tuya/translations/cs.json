@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Plná taška"
-      },
       "carbon_dioxide": {
         "name": "Oxid uhličitý"
       },
       "carbon_monoxide": {
         "name": "Oxid uhelnatý"
-      },
-      "cover_off": {
-        "name": "Kryt je pryč"
       },
       "defrost": {
         "name": "Rozmrazit"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Zpráva zvonku u dveří"
-      },
-      "doorbell_picture": {
-        "name": "Obrázek zvonku"
-      },
       "numbered_button": {
         "name": "Tlačítko {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
           "power_on": "Zapnuto"
         }
       },
-      "siren_mode": {
-        "name": "Režim sirény",
-        "state": {
-          "alarm_light": "Světlo",
-          "alarm_sound": "Zvuk",
-          "alarm_sound_light": "Zvuk a světlo",
-          "normal": "Normální"
-        }
-      },
       "target_humidity": {
         "name": "Cílová vlhkost"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Stav",
         "state": {
-          "clean": "Čištění",
           "empty": "Vyprazdňování",
           "level": "Vyrovnávání",
           "sleep": "Ve spánku",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "Hloubka"
       },
-      "dew_point_temperature": {
-        "name": "Rosný bod"
-      },
       "duster_cloth_life": {
         "name": "Životnost prachovky"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "Doby vylučování (den)"
-      },
-      "feels_like_temperature": {
-        "name": "Pocitová teplota"
       },
       "filter_duration": {
         "name": "Doba trvání filtru"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "Plyn"
-      },
-      "heat_index_temperature": {
-        "name": "Teplotní index"
       },
       "humidity": {
         "name": "Vlhkost vzduchu"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "Doba spotřeby vody"
       },
-      "wind_chill_index_temperature": {
-        "name": "Index chladného větru"
-      },
       "wind_direction": {
         "name": "Směr větru"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Akci nelze zpracovat, protože zařízení neposkytuje odpovídající funkční kód (očekává se jeden z {expected} z {available})."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Entita Tuya \"{entity}\" je zastaralá a byla nahrazena novou entitou ventilu.\nAktualizujte ovládací panely, automatizace a skripty, deaktivujte \"{entity}\" a znovu načtěte integraci/restartujte Home Assistanta, abyste tento problém vyřešili.",
-      "title": "{name} je zastaralý"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

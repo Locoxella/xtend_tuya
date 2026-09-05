@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Pilnas krepšys"
-      },
       "carbon_dioxide": {
         "name": "Anglies dioksidas"
       },
       "carbon_monoxide": {
         "name": "Anglies monoksidas"
-      },
-      "cover_off": {
-        "name": "Uždenkite"
       },
       "defrost": {
         "name": "Atitirpinimas"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Durų skambučio pranešimas"
-      },
-      "doorbell_picture": {
-        "name": "Durų skambučio nuotrauka"
-      },
       "numbered_button": {
         "name": "Mygtukas {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
           "power_on": "Įjungta"
         }
       },
-      "siren_mode": {
-        "name": "Sirenos režimas",
-        "state": {
-          "alarm_light": "Šviesa",
-          "alarm_sound": "Garsas",
-          "alarm_sound_light": "Garsas & šviesa",
-          "normal": "Normalus"
-        }
-      },
       "target_humidity": {
         "name": "Tikslinė oro drėgmė"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Būsena",
         "state": {
-          "clean": "Valymas",
           "empty": "Ištuštinimas",
           "level": "Lygiavimas",
           "sleep": "Miegojimas",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "Gylis"
       },
-      "dew_point_temperature": {
-        "name": "Rasos taškas"
-      },
       "duster_cloth_life": {
         "name": "Šluostės eksploatavimo laikas"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "Išsiskyrimo laikas (diena)"
-      },
-      "feels_like_temperature": {
-        "name": "Jaučiasi kaip"
       },
       "filter_duration": {
         "name": "Filtro trukmė"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "Dujos"
-      },
-      "heat_index_temperature": {
-        "name": "Šilumos indeksas"
       },
       "humidity": {
         "name": "Oro drėgmė"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "Vandens naudojimo trukmė"
       },
-      "wind_chill_index_temperature": {
-        "name": "Vėjo šalčio indeksas"
-      },
       "wind_direction": {
         "name": "Vėjo kryptis"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Nepavyko apdoroti veiksmo, nes įrenginys nepateikia atitinkamo funkcijos kodo (tikėtasi vieno iš {expected} tarp {available} )."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tuya objektas ' {entity} ' yra nebenaudojamas, jį pakeičia naujas vožtuvo objektas. \n Atnaujinkite savo ataskaitų suvestines, automatizavimo funkcijas ir scenarijus, išjunkite ' {entity} ' ir iš naujo įkelkite integraciją / paleiskite Home Assistant, kad išspręstumėte šią problemą.",
-      "title": "{name} nebenaudojamas"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

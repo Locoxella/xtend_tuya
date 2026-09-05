@@ -62,17 +62,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Kott on täis"
-      },
       "carbon_dioxide": {
         "name": "Süsihappegaas"
       },
       "carbon_monoxide": {
         "name": "Vingugaas"
-      },
-      "cover_off": {
-        "name": "Kate eest"
       },
       "defrost": {
         "name": "Sulatamine"
@@ -287,12 +281,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Uksekella sõnum"
-      },
-      "doorbell_picture": {
-        "name": "Uksekella pilt"
-      },
       "numbered_button": {
         "name": "Nupp {button_number}",
         "state_attributes": {
@@ -1013,15 +1001,6 @@
           "power_on": "Sees"
         }
       },
-      "siren_mode": {
-        "name": "Sireeni režiim",
-        "state": {
-          "alarm_light": "Valgus",
-          "alarm_sound": "Heli",
-          "alarm_sound_light": "Heli ja valgus",
-          "normal": "Tavaline"
-        }
-      },
       "target_humidity": {
         "name": "Soovitud niiskusemäär"
       },
@@ -1460,7 +1439,6 @@
       "cat_litter_box_status": {
         "name": "Olek",
         "state": {
-          "clean": "Puhastamine",
           "empty": "Tühjendamine",
           "level": "Tasandamine",
           "sleep": "Ootel",
@@ -1495,9 +1473,6 @@
       "depth": {
         "name": "Sügavus"
       },
-      "dew_point_temperature": {
-        "name": "Kastepunkt"
-      },
       "duster_cloth_life": {
         "name": "Tolmulapi kasutusiga"
       },
@@ -1506,9 +1481,6 @@
       },
       "excretion_times_day": {
         "name": "Eritumise ajad (päev)"
-      },
-      "feels_like_temperature": {
-        "name": "Tundub nagu"
       },
       "filter_duration": {
         "name": "Filtri tööaeg"
@@ -1524,9 +1496,6 @@
       },
       "gas": {
         "name": "Gaas"
-      },
-      "heat_index_temperature": {
-        "name": "Kuumaindeks"
       },
       "humidity": {
         "name": "Niiskus"
@@ -1747,18 +1716,11 @@
       "water_time": {
         "name": "Vee kasutamise kestus"
       },
-      "wind_chill_index_temperature": {
-        "name": "Tuulekülma indeks"
-      },
       "wind_direction": {
         "name": "Tuule suund"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
@@ -3056,16 +3018,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "Toimingut ei saa töödelda kuna seade ei paku vastavat funktsioonikoodi (oodatav oli üks koodidest {expected} valikust {available} )."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "Tuya üksus \"{entity}' on kasutuselt kõrvaldatud ja asendatud uue klapiüksusega.\nVärskenda oma vaateid, automatiseerimisi ja skripte, keela `{entity}`  ja lae selle probleemi lahendamiseks sidumine uuesti / taaskäivita Home Assistant.",
-      "title": "{name} on aegunud"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

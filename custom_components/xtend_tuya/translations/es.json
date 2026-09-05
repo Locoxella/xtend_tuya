@@ -94,17 +94,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "bag_full": {
-        "name": "Bolsa llena"
-      },
       "carbon_dioxide": {
         "name": "Dióxido de carbono"
       },
       "carbon_monoxide": {
         "name": "Monóxido de carbono"
-      },
-      "cover_off": {
-        "name": "Destapar"
       },
       "defrost": {
         "name": "Descongelar"
@@ -319,12 +313,6 @@
       }
     },
     "event": {
-      "doorbell_message": {
-        "name": "Mensaje del timbre"
-      },
-      "doorbell_picture": {
-        "name": "Imagen del timbre"
-      },
       "numbered_button": {
         "name": "Botón {button_number}",
         "state_attributes": {
@@ -1045,15 +1033,6 @@
           "power_on": "Encendido"
         }
       },
-      "siren_mode": {
-        "name": "Modo sirena",
-        "state": {
-          "alarm_light": "Luz",
-          "alarm_sound": "Sonido",
-          "alarm_sound_light": "Sonido y luz",
-          "normal": "Normal"
-        }
-      },
       "target_humidity": {
         "name": "Humedad objetivo"
       },
@@ -1123,13 +1102,6 @@
           "72h": "72h",
           "96h": "96h",
           "cancel": "Cancelar"
-        }
-      },
-      "unit_switch": {
-        "name": "Unidad de peso",
-        "state": {
-          "kg": "Kilogramos",
-          "lb": "Libras"
         }
       },
       "alarm_volume": {
@@ -1449,10 +1421,7 @@
     },
     "sensor": {
       "dynamic_passcode": {
-        "name": "Código de acceso dinámico",
-        "state": {
-          "off": "Off"
-        }
+        "name": "Código de acceso dinámico"
       },
       "dynamic_passcode_expires_at": {
         "name": "Hora de expiración del código dinámico"
@@ -1554,9 +1523,6 @@
       "distance": {
         "name": "Distancia al objetivo"
       },
-      "dew_point_temperature": {
-        "name": "Punto de rocío"
-      },
       "duster_cloth_life": {
         "name": "Vida útil de la gamuza"
       },
@@ -1568,9 +1534,6 @@
       },
       "fault": {
         "name": "Error"
-      },
-      "feels_like_temperature": {
-        "name": "Se siente como"
       },
       "filter_duration": {
         "name": "Duración del filtro"
@@ -1586,9 +1549,6 @@
       },
       "gas": {
         "name": "Gas"
-      },
-      "heat_index_temperature": {
-        "name": "Índice de calor"
       },
       "humidity": {
         "name": "Humedad"
@@ -1814,9 +1774,6 @@
       },
       "water_time": {
         "name": "Duración del consumo de agua"
-      },
-      "wind_chill_index_temperature": {
-        "name": "Índice de sensación térmica"
       },
       "wind_direction": {
         "name": "Dirección del viento"
@@ -3093,16 +3050,7 @@
       }
     }
   },
-  "exceptions": {
-    "action_dpcode_not_found": {
-      "message": "No se puede procesar la acción porque el dispositivo no proporciona un código de función correspondiente (se esperaba uno de {expected} en {available})."
-    }
-  },
   "issues": {
-    "deprecated_entity_new_valve": {
-      "description": "La entidad Tuya `{entity}` está obsoleta y fue reemplazada por una nueva entidad de válvula. \nPor favor, actualiza tus paneles, automatizaciones y scripts, desactiva `{entity}` y vuelve a cargar la integración/reinicia Home Assistant para solucionar este problema.",
-      "title": "{name} está obsoleto"
-    },
     "service_deprecation_turn_off": {
       "title": "Tuya vacuum support for vacuum.turn_off is being removed",
       "fix_flow": {

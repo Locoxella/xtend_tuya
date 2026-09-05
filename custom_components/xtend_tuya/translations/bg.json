@@ -1455,9 +1455,6 @@
       "current_temperature": {
         "name": "Текуща температура"
       },
-      "dew_point_temperature": {
-        "name": "Точка на оросяване"
-      },
       "formaldehyde": {
         "name": "Формалдехид"
       },
@@ -1585,11 +1582,7 @@
         "name": "Посока на вятъра"
       },
       "dynamic_passcode": {
-        "name": "Dynamic Passcode",
-        "state": {
-          "expired": "Expired",
-          "off": "Off"
-        }
+        "name": "Dynamic Passcode"
       },
       "dynamic_passcode_expires_at": {
         "name": "Dynamic Passcode Expiration Time"
