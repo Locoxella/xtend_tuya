@@ -2288,7 +2288,6 @@ async def async_setup_entry(
                         main_sensor = XTLockDynamicPasscodeSensor(device, hass_data.manager)
                         entities.append(main_sensor)
                         entities.append(XTLockDynamicPasscodeExpiresAtSensor(device, hass_data.manager, main_sensor))
-                        entities.append(XTLockDynamicPasscodeRemainingSensor(device, hass_data.manager, main_sensor))
             if entities:
                 async_add_entities(entities)
 
@@ -2933,51 +2932,6 @@ class XTLockDynamicPasscodeExpiresAtSensor(XTEntity, RestoreSensor):  # type: ig
                 return datetime.fromtimestamp(self._main_sensor._valid_until, UTC)
         return None
 
-
-class XTLockDynamicPasscodeRemainingSensor(XTEntity, RestoreSensor):  # type: ignore
-    """Auxiliary diagnostic sensor for dynamic passcode remaining seconds (disabled by default)."""
-
-    _attr_has_entity_name = True
-    _attr_icon = "mdi:timer-sand"
-    _attr_entity_registry_enabled_default = False
-    _attr_native_unit_of_measurement = "s"
-
-    def __init__(self, device: XTDevice, device_manager: MultiManager, main_sensor: XTLockDynamicPasscodeSensor) -> None:
-        description = SensorEntityDescription(
-            key="dynamic_passcode_remaining_seconds",
-            name="Dynamic Passcode Remaining Time",
-            translation_key="dynamic_passcode_remaining_seconds",
-            native_unit_of_measurement="s",
-            entity_registry_enabled_default=False,
-        )
-        super().__init__(
-            device=device,
-            device_manager=device_manager,
-            description=description,
-        )
-        self._main_sensor = main_sensor
-        self._attr_unique_id = f"{device.id}_dynamic_passcode_remaining_seconds"
-        self._attr_translation_key = "dynamic_passcode_remaining_seconds"
-        self._attr_entity_registry_enabled_default = False
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, f"xtend_tuya_passcode_changed_{self.device.id}", self._async_update_state
-            )
-        )
-
-    @callback
-    def _async_update_state(self) -> None:
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> int:
-        if self._main_sensor._passcode and self._main_sensor._valid_until:
-            now_ts = int(time.time())
-            return max(0, self._main_sensor._valid_until - now_ts)
-        return 0
 
 
 
