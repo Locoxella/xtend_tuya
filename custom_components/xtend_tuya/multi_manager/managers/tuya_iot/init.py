@@ -700,6 +700,50 @@ class XTTuyaIOTDeviceManagerInterface(XTDeviceManagerInterface):
             device, lock, force_unlock_mechanism
         )
 
+    def call_door_operate(
+        self, device: XTDevice, open: str | bool, api: XTIOTOpenAPI | None = None
+    ) -> bool:
+        if self.iot_account is None:
+            return False
+        return self.iot_account.device_manager.call_door_operate(device, open, api)
+
+    def call_door_open(
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
+    ) -> bool:
+        if self.iot_account is None:
+            return False
+        return self.iot_account.device_manager.call_door_open(device, api)
+
+    def get_door_lock_password_ticket(
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
+    ) -> dict[str, Any] | None:
+        if self.iot_account is None:
+            return None
+        return self.iot_account.device_manager.get_door_lock_password_ticket(device, api)
+
+    def create_temporary_password(
+        self,
+        device: XTDevice,
+        password: str,
+        name: str | None = None,
+        effective_time: int | None = None,
+        invalid_time: int | None = None,
+        api: XTIOTOpenAPI | None = None,
+    ) -> dict[str, Any] | None:
+        if self.iot_account is None:
+            return None
+        return self.iot_account.device_manager.create_temporary_password(
+            device, password, name, effective_time, invalid_time, api
+        )
+
+    def get_dynamic_password(
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
+    ) -> dict[str, Any] | None:
+        if self.iot_account is None:
+            return None
+        return self.iot_account.device_manager.get_dynamic_password(device, api)
+
+
     def call_api(
         self, method: str, url: str, payload: str | None
     ) -> dict[str, Any] | None:

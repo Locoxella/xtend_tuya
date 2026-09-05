@@ -2774,21 +2774,26 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
 
     async def _async_update_passcode(self) -> None:
         if account := self.device_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
-            if hasattr(account, "get_dynamic_password"):
+            target = account
+            if not hasattr(target, "get_dynamic_password") and hasattr(account, "iot_account") and account.iot_account:
+                target = getattr(account.iot_account, "device_manager", account)
+
+            if hasattr(target, "get_dynamic_password"):
                 res = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                    account.get_dynamic_password, self.device
+                    target.get_dynamic_password, self.device
                 )
                 if res and isinstance(res, dict) and res.get("dynamic_password"):
                     self._passcode = res.get("dynamic_password", None)
                     self._valid_until = res.get("valid_until", None)
-                    LOGGER.error(f"[Tuya Lock Passcode Sensor] Passcode successfully set for {self.entity_id}: {self._passcode}")
+                    LOGGER.info(f"[Tuya Lock Passcode Sensor] Passcode successfully updated for {self.entity_id}: {self._passcode}")
                     self.async_write_ha_state()
                 else:
-                    LOGGER.error(f"[Tuya Lock Passcode Sensor] Could not retrieve passcode for device {self.device.id}, res={res}")
+                    LOGGER.warning(f"[Tuya Lock Passcode Sensor] Could not retrieve passcode for device {self.device.id}, res={res}")
             else:
                 LOGGER.error(f"[Tuya Lock Passcode Sensor] Account does not have get_dynamic_password method")
         else:
             LOGGER.error(f"[Tuya Lock Passcode Sensor] Could not find account {MESSAGE_SOURCE_TUYA_IOT}")
+
 
 
     @property

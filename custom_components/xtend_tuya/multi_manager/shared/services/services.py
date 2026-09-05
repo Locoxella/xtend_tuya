@@ -275,10 +275,14 @@ class ServiceManager:
             return None
         if multi_manager := self._get_correct_multi_manager(source, device_id):
             if account := multi_manager.get_account_by_name(source):
+                target = account
+                if not hasattr(target, "create_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
+                    target = getattr(account.iot_account, "device_manager", account)
+
                 if device := multi_manager.device_map.get(device_id):
-                    if hasattr(account, "create_temporary_password"):
+                    if hasattr(target, "create_temporary_password"):
                         response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
-                            account.create_temporary_password,
+                            target.create_temporary_password,
                             device,
                             password,
                             name,
@@ -287,6 +291,7 @@ class ServiceManager:
                         )
                         return response
         return None
+
 
 
     async def _handle_webrtc_sdp_exchange(
