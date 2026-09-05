@@ -1172,33 +1172,58 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         device: XTDevice,
         api: XTIOTOpenAPI | None = None,
     ) -> dict[str, Any] | None:
-        """Get or calculate 5-minute dynamic password for lock."""
+        """Get or calculate 8-digit 5-minute dynamic password for lock."""
         api_to_use = api or self.api
 
-        try:
-            res = api_to_use.get(f"/v1.0/devices/{device.id}/door-lock/dynamic-password")
-            if res and res.get("success", False):
-                result = res.get("result", {})
-                if isinstance(result, str):
-                    return {"dynamic_password": result, "valid_until": int(time.time()) + 300}
-                elif isinstance(result, dict):
-                    passcode = result.get("dynamic_password") or result.get("password") or result.get("code")
-                    valid_until = result.get("valid_until") or result.get("expire_time")
-                    if passcode:
-                        return {"dynamic_password": str(passcode), "valid_until": valid_until}
+        ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
 
-            res = api_to_use.get(f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords")
-            if res and res.get("success", False):
-                result = res.get("result", {})
-                if isinstance(result, str):
-                    return {"dynamic_password": result, "valid_until": int(time.time()) + 300}
-                elif isinstance(result, dict):
-                    passcode = result.get("dynamic_password") or result.get("password") or result.get("code")
-                    valid_until = result.get("valid_until") or result.get("expire_time")
+        endpoints = [
+            f"/v1.0/devices/{device.id}/door-lock/dynamic-password",
+            f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords",
+            f"/v1.0/devices/{device.id}/door-lock/dynamic-passwords",
+        ]
+        if ticket_id:
+            endpoints.insert(0, f"/v1.0/devices/{device.id}/door-lock/dynamic-password?ticket_id={ticket_id}")
+
+        for endpoint in endpoints:
+            try:
+                res = api_to_use.get(endpoint)
+                self.multi_manager.device_watcher.report_message(
+                    device.id,
+                    f"API get_dynamic_password result ({endpoint}): {res}",
+                    XTDeviceWatcherCategory.IOT_API,
+                )
+                if res and res.get("success", False):
+                    result = res.get("result", {})
+                    passcode = None
+                    valid_until = int(time.time()) + 300
+
+                    if isinstance(result, (str, int)):
+                        passcode = f"{int(result):08d}" if str(result).isdigit() else str(result)
+                    elif isinstance(result, dict):
+                        raw_code = (
+                            result.get("dynamic_password")
+                            or result.get("dynamicPassword")
+                            or result.get("password")
+                            or result.get("code")
+                            or result.get("random_password")
+                        )
+                        if raw_code is not None:
+                            passcode = f"{int(raw_code):08d}" if str(raw_code).isdigit() else str(raw_code)
+                        valid_until = (
+                            result.get("valid_until")
+                            or result.get("expire_time")
+                            or result.get("invalid_time")
+                            or valid_until
+                        )
+
                     if passcode:
-                        return {"dynamic_password": str(passcode), "valid_until": valid_until}
-        except Exception as e:
-            LOGGER.warning(f"Failed to fetch Cloud dynamic password: {e}")
+                        return {
+                            "dynamic_password": passcode,
+                            "valid_until": valid_until,
+                        }
+            except Exception as e:
+                LOGGER.warning(f"Failed to fetch Cloud dynamic password at {endpoint}: {e}")
 
         local_key = getattr(device, "local_key", "") or ""
         if not local_key and hasattr(device, "status"):
@@ -1214,10 +1239,9 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 }
         return None
 
-
     @staticmethod
     def _calculate_offline_dynamic_passcode(local_key: str, device_id: str) -> str | None:
-        """Calculate Tuya 5-minute offline dynamic passcode."""
+        """Calculate Tuya 8-digit 5-minute offline dynamic passcode."""
         try:
             now_ts = int(time.time())
             window = now_ts // 300
@@ -1231,7 +1255,8 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 | ((digest[offset + 2] & 0xFF) << 8)
                 | (digest[offset + 3] & 0xFF)
             )
-            return f"{code_num % 1000000:06d}"
+            return f"{code_num % 100000000:08d}"
         except Exception:
             return None
+
 

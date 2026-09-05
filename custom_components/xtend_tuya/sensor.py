@@ -2798,7 +2798,7 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
     def should_entity_be_added(device: XTDevice, device_manager: MultiManager) -> bool:
         """Check if lock device supports dynamic passcodes."""
         is_lock = device.category in ("ms", "jtmspro", "videolock", "jtmsbh") or any(
-            dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock")
+            dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock", "open_close")
         )
         if not is_lock:
             return False
@@ -2807,16 +2807,8 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
             dp in device.status for dp in ("unlock_password", "unlock_method_create", "temp_password", "dynamic_password", "password_unlock_user")
         ) or bool(getattr(device, "local_key", None) or (hasattr(device, "status") and device.status.get("local_key")))
 
-        if not has_passcode_cap:
-            return False
+        return has_passcode_cap
 
-        if account := device_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
-            if hasattr(account, "get_dynamic_password"):
-                res = account.get_dynamic_password(device)
-                if res and isinstance(res, dict) and res.get("dynamic_password"):
-                    return True
-
-        return False
 
 
 
