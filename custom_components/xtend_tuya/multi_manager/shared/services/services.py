@@ -626,7 +626,14 @@ class ServiceManager:
                     device,
                 )
                 if isinstance(response, list):
-                    all_passwords.extend(response)
+                    for p in response:
+                        if isinstance(p, dict):
+                            p_copy = dict(p)
+                            p_copy["device_id"] = device.id
+                            p_copy["device_name"] = getattr(device, "name", dev_id)
+                            all_passwords.append(p_copy)
+                        else:
+                            all_passwords.append(p)
 
             return {"passwords": all_passwords}
         except HomeAssistantError:
@@ -646,16 +653,20 @@ class ServiceManager:
                 raise HomeAssistantError("Missing required parameters: device and password_id are required.")
 
             device_ids = device_id_raw if isinstance(device_id_raw, list) else [device_id_raw]
-            last_response = None
+            any_success = False
+            last_error = None
 
             for dev_id in device_ids:
                 multi_manager, device = self._resolve_device(dev_id)
                 if not multi_manager or not device:
                     raise HomeAssistantError(f"Device '{dev_id}' not found in Xtend Tuya integration.")
 
+                dev_display_name = getattr(device, "name", None) or dev_id
+                dev_label = f"'{dev_display_name}' ({dev_id})" if dev_display_name != dev_id else f"'{dev_id}'"
+
                 account = self._get_account_for_device(multi_manager, source)
                 if not account:
-                    raise HomeAssistantError(f"No valid Tuya account found for device '{dev_id}'.")
+                    raise HomeAssistantError(f"No valid Tuya account found for device {dev_label}.")
 
                 target = account
                 if not hasattr(target, "delete_temporary_password") and hasattr(account, "iot_account") and account.iot_account:
@@ -671,16 +682,22 @@ class ServiceManager:
                 )
 
                 if isinstance(response, dict):
-                    if not response.get("success", False):
+                    if response.get("success", False):
+                        any_success = True
+                        last_response = response
+                    else:
                         msg = response.get("msg") or response.get("error") or "Unknown error from Tuya Cloud"
                         code = response.get("code")
-                        err_msg = f"Tuya API Error for device '{dev_id}': {msg} (code {code})" if code else f"Tuya API Error for device '{dev_id}': {msg}"
-                        LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
-                        raise HomeAssistantError(err_msg)
+                        err_msg = f"Tuya API Error for device {dev_label}: {msg} (code {code})" if code else f"Tuya API Error for device {dev_label}: {msg}"
+                        LOGGER.warning(f"[Tuya Temp Password Service] {err_msg}")
+                        last_error = err_msg
+                else:
+                    last_response = response
 
-                last_response = response
+            if not any_success and last_error:
+                raise HomeAssistantError(last_error)
 
-            return last_response
+            return last_response or {"success": True}
         except HomeAssistantError:
             raise
         except Exception as e:
