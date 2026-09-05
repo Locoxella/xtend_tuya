@@ -25,6 +25,38 @@
             }
         }
     },
+    "services": {
+        "create_temporary_password": {
+            "name": "Crear contrase\u00f1a temporal",
+            "description": "Crea un c\u00f3digo de acceso temporal con restricci\u00f3n de tiempo para una cerradura inteligente Tuya.",
+            "fields": {
+                "device_id": {
+                    "name": "Dispositivo",
+                    "description": "La cerradura inteligente Tuya."
+                },
+                "password": {
+                    "name": "Contrase\u00f1a / PIN",
+                    "description": "El c\u00f3digo num\u00e9rico de 6 a 8 d\u00edgitos."
+                },
+                "name": {
+                    "name": "Nombre / Etiqueta",
+                    "description": "Nombre opcional para la clave temporal."
+                },
+                "effective_time": {
+                    "name": "Fecha y hora de inicio",
+                    "description": "Fecha y hora de inicio de validez (por defecto: ahora)."
+                },
+                "invalid_time": {
+                    "name": "Fecha y hora de expiraci\u00f3n",
+                    "description": "Fecha y hora de expiraci\u00f3n (por defecto: 24h desde ahora)."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Obtener c\u00f3digo din\u00e1mico",
+            "description": "Consulta un nuevo c\u00f3digo din\u00e1mico de 5 minutos a la nube de Tuya."
+        }
+    },
     "entity": {
         "binary_sensor": {
             "bag_full": {
