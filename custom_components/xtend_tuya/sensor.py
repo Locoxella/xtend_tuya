@@ -2761,7 +2761,6 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         self._passcode: str | None = None
         self._valid_until: int | None = None
         self._unsub_timer: Callable[[], None] | None = None
-        self._unsub_warn_timer: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -2800,11 +2799,6 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
                             self._unsub_timer()
                         self._unsub_timer = async_call_later(self.hass, delay, self._async_clear_passcode)
 
-                        if self._unsub_warn_timer:
-                            self._unsub_warn_timer()
-                        if delay > 10:
-                            self._unsub_warn_timer = async_call_later(self.hass, delay - 10, self._async_warn_expiring_soon)
-
                         self.hass.bus.async_fire(
                             "xtend_tuya_dynamic_passcode_generated",
                             {
@@ -2829,27 +2823,11 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         return None
 
     @callback
-    def _async_warn_expiring_soon(self, _=None) -> None:
-        """Fire event 10 seconds before dynamic passcode expiration."""
-        self._unsub_warn_timer = None
-        LOGGER.info(f"[Tuya Lock Passcode Sensor] Dynamic passcode expiring in 10s for {self.entity_id}")
-        self.hass.bus.async_fire(
-            "xtend_tuya_dynamic_passcode_expiring_soon",
-            {
-                "device_id": self.device.id,
-                "entity_id": self.entity_id,
-                "seconds_remaining": 10,
-                "valid_until": self._valid_until,
-            },
-        )
-
-    @callback
     def _async_clear_passcode(self, _=None) -> None:
         """Clear expired passcode and reset sensor state to None / unavailable."""
         self._passcode = None
         self._valid_until = None
         self._unsub_timer = None
-        self._unsub_warn_timer = None
         LOGGER.info(f"[Tuya Lock Passcode Sensor] Dynamic passcode expired for {self.entity_id}, state reset to unavailable.")
         self.hass.bus.async_fire(
             "xtend_tuya_dynamic_passcode_expired",
