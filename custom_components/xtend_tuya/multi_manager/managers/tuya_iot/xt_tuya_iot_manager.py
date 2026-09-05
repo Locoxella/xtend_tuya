@@ -1224,7 +1224,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         api: XTIOTOpenAPI | None = None,
     ) -> dict[str, Any]:
         """Create a temporary password for a smart lock via Tuya Cloud API."""
-        apis_to_try = [api] if api else [self.api, getattr(self, "non_user_api", None)]
+        apis_to_try = [api] if api else [self.api]
         apis_to_try = [a for a in apis_to_try if a is not None]
 
         now_ms = int(time.time() * 1000)
@@ -1334,7 +1334,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         api: XTIOTOpenAPI | None = None,
     ) -> list[dict[str, Any]]:
         """Get all active temporary passwords for a Tuya smart lock."""
-        apis_to_try = [api] if api else [self.api, getattr(self, "non_user_api", None)]
+        apis_to_try = [api] if api else [self.api]
         apis_to_try = [a for a in apis_to_try if a is not None]
 
         for api_to_use in apis_to_try:
@@ -1354,7 +1354,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         api: XTIOTOpenAPI | None = None,
     ) -> dict[str, Any]:
         """Delete a temporary password from a Tuya smart lock by password_id."""
-        apis_to_try = [api] if api else [self.api, getattr(self, "non_user_api", None)]
+        apis_to_try = [api] if api else [self.api]
         apis_to_try = [a for a in apis_to_try if a is not None]
 
         res: dict[str, Any] = {}

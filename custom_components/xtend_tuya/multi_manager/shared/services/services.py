@@ -435,7 +435,13 @@ class ServiceManager:
                     if not response.get("success", False):
                         msg = response.get("msg") or response.get("error") or "Unknown error from Tuya Cloud"
                         code = response.get("code")
-                        err_msg = f"Tuya API Error for device '{dev_id}': {msg} (code {code})" if code else f"Tuya API Error for device '{dev_id}': {msg}"
+                        if code == 28840002 or "No permissions" in str(msg):
+                            err_msg = (
+                                f"Tuya API Error for device '{dev_id}': No permissions (code {code}). "
+                                "Falta autorizar el servicio 'Smart Lock Service' en iot.tuya.com (Cloud > Development > Tu Proyecto > Service API)."
+                            )
+                        else:
+                            err_msg = f"Tuya API Error for device '{dev_id}': {msg} (code {code})" if code else f"Tuya API Error for device '{dev_id}': {msg}"
                         LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
                         raise HomeAssistantError(err_msg)
 
