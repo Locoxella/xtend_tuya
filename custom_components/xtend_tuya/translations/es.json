@@ -1451,7 +1451,7 @@
       "dynamic_passcode": {
         "name": "Código de acceso dinámico",
         "state": {
-          "expired": "Expirado"
+          "off": "Off"
         }
       },
       "dynamic_passcode_expires_at": {

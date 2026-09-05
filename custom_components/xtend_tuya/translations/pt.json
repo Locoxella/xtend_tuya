@@ -1444,7 +1444,8 @@
       "dynamic_passcode": {
         "name": "Código de acesso dinâmico",
         "state": {
-          "expired": "Expired"
+          "expired": "Expired",
+          "off": "Off"
         }
       },
       "air_pressure": {

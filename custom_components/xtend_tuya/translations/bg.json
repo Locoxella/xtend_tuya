@@ -1587,7 +1587,8 @@
       "dynamic_passcode": {
         "name": "Dynamic Passcode",
         "state": {
-          "expired": "Expired"
+          "expired": "Expired",
+          "off": "Off"
         }
       },
       "dynamic_passcode_expires_at": {

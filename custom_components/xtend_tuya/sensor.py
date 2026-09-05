@@ -2848,9 +2848,9 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
     @property
     def native_value(self) -> str | None:
         if not self._passcode:
-            return "expired"
+            return "off"
         if self._valid_until and int(time.time()) > self._valid_until:
-            return "expired"
+            return "off"
         return self._passcode
 
     @property
