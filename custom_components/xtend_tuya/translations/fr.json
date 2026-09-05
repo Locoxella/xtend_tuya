@@ -20,6 +20,38 @@
             }
         }
     },
+    "services": {
+        "create_temporary_password": {
+            "name": "Cr\u00e9er un mot de passe temporaire",
+            "description": "Cr\u00e9e un code d'acc\u00e8s temporaire restreint dans le temps pour une serrure connect\u00e9e Tuya.",
+            "fields": {
+                "device_id": {
+                    "name": "Appareil",
+                    "description": "La serrure connect\u00e9e Tuya."
+                },
+                "password": {
+                    "name": "Mot de passe / Code PIN",
+                    "description": "Le code num\u00e9rique de 6 \u00e0 8 chiffres."
+                },
+                "name": {
+                    "name": "Nom / Libell\u00e9",
+                    "description": "Un nom optionnel pour le code."
+                },
+                "effective_time": {
+                    "name": "Date et heure de d\u00e9but",
+                    "description": "Date et heure de d\u00e9but de validit\u00e9."
+                },
+                "invalid_time": {
+                    "name": "Date et heure d'expiration",
+                    "description": "Date et heure d'expiration."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Obtenir un code dynamique",
+            "description": "Obtient un nouveau code dynamique de 5 minutes depuis le cloud Tuya."
+        }
+    },
     "entity": {
         "binary_sensor": {
             "carbon_dioxide": {
@@ -57,6 +89,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "G\u00e9n\u00e9rer un code dynamique"
+            },
             "reset_duster_cloth": {
                 "name": "R\u00e9initialiser la dur\u00e9e de vie du chiffon anti-poussi\u00e8re"
             },
@@ -432,6 +467,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "Code d'acc\u00e8s dynamique"
+            },
             "air_pressure": {
                 "name": "Pression atmosph\u00e9rique"
             },

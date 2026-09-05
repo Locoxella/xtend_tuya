@@ -8,6 +8,38 @@
             "login_error": "Errore di accesso ({code}): {msg}"
         }
     },
+    "services": {
+        "create_temporary_password": {
+            "name": "Crea password temporanea",
+            "description": "Crea un codice di accesso temporaneo a tempo limitato per una serratura intelligente Tuya.",
+            "fields": {
+                "device_id": {
+                    "name": "Dispositivo",
+                    "description": "La serratura intelligente Tuya."
+                },
+                "password": {
+                    "name": "Password / PIN",
+                    "description": "Il codice numerico da 6 a 8 cifre."
+                },
+                "name": {
+                    "name": "Nome / Etichetta",
+                    "description": "Un nome opzionale per il codice."
+                },
+                "effective_time": {
+                    "name": "Data e ora di inizio",
+                    "description": "Data e ora di inizio validit\u00e0."
+                },
+                "invalid_time": {
+                    "name": "Data e ora di scadenza",
+                    "description": "Data e hora di scadenza."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Ottieni codice dinamico",
+            "description": "Ottiene un nuovo codice dinamico da 5 minuti dal cloud Tuya."
+        }
+    },
     "entity": {
         "binary_sensor": {
             "bag_full": {
@@ -60,6 +92,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "Genera codice dinamico"
+            },
             "reset_duster_cloth": {
                 "name": "Ripristina panno per la polvere"
             },
@@ -475,6 +510,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "Codice di accesso dinamico"
+            },
             "air_pressure": {
                 "name": "Pressione dell'aria"
             },

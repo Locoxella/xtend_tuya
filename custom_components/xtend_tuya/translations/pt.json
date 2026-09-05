@@ -25,6 +25,38 @@
             }
         }
     },
+    "services": {
+        "create_temporary_password": {
+            "name": "Criar palavra-passe tempor\u00e1ria",
+            "description": "Cria um c\u00f3digo de acesso tempor\u00e1rio com restri\u00e7\u00e3o de tempo para uma fechadura inteligente Tuya.",
+            "fields": {
+                "device_id": {
+                    "name": "Dispositivo",
+                    "description": "A fechadura inteligente Tuya."
+                },
+                "password": {
+                    "name": "Palavra-passe / PIN",
+                    "description": "O c\u00f3digo num\u00e9rico de 6 a 8 d\u00edgitos."
+                },
+                "name": {
+                    "name": "Nome / Etiqueta",
+                    "description": "Um nome opcional para o c\u00f3digo."
+                },
+                "effective_time": {
+                    "name": "Data e hora de in\u00edcio",
+                    "description": "Data e hora de in\u00edcio de validade."
+                },
+                "invalid_time": {
+                    "name": "Data e hora de expira\u00e7\u00e3o",
+                    "description": "Data e hora de expira\u00e7\u00e3o."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Obter c\u00f3digo din\u00e2mico",
+            "description": "Obt\u00e9m um novo c\u00f3digo din\u00e2mico de 5 minutos da nuvem Tuya."
+        }
+    },
     "entity": {
         "binary_sensor": {
             "bag_full": {
@@ -77,6 +109,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "Gerar c\u00f3digo din\u00e2mico"
+            },
             "factory_reset": {
                 "name": "Reposi\u00e7\u00e3o de f\u00e1brica"
             },
@@ -582,6 +617,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "C\u00f3digo de acesso din\u00e2mico"
+            },
             "air_pressure": {
                 "name": "Press\u00e3o atmosf\u00e9rica"
             },

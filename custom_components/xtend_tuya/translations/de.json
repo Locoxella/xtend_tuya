@@ -25,6 +25,38 @@
             }
         }
     },
+    "services": {
+        "create_temporary_password": {
+            "name": "Tempor\u00e4res Passwort erstellen",
+            "description": "Erstellt einen zeitlich begrenzten tempor\u00e4ren Passcode f\u00fcr ein Tuya-Smart-Lock.",
+            "fields": {
+                "device_id": {
+                    "name": "Ger\u00e4t",
+                    "description": "Das Tuya-Smart-Lock-Ger\u00e4t."
+                },
+                "password": {
+                    "name": "Passwort / PIN",
+                    "description": "Der 6-8-stellige numerische Passcode."
+                },
+                "name": {
+                    "name": "Name / Bezeichnung",
+                    "description": "Ein optionaler Name f\u00fcr den Passcode."
+                },
+                "effective_time": {
+                    "name": "G\u00fcltig ab",
+                    "description": "Startdatum und -zeit."
+                },
+                "invalid_time": {
+                    "name": "G\u00fcltig bis",
+                    "description": "Ablaufdatum und -zeit."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Dynamischen Passcode abrufen",
+            "description": "Ruft bei Bedarf einen neuen 5-Minuten-Passcode ab."
+        }
+    },
     "entity": {
         "binary_sensor": {
             "bag_full": {
@@ -77,6 +109,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "Dynamischen Passcode generieren"
+            },
             "factory_reset": {
                 "name": "Werksreset"
             },
@@ -582,6 +617,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "Dynamischer Passcode"
+            },
             "air_pressure": {
                 "name": "Luftdruck"
             },
