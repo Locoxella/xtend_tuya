@@ -23,6 +23,7 @@ from ....util import (
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers import device_registry as dr
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.core import SupportsResponse
 from homeassistant.const import (
     CONF_DEVICE_ID,
 )
@@ -228,6 +229,7 @@ class ServiceManager:
             True,
             True,
             False,
+            supports_response=SupportsResponse.OPTIONAL,
         )
         self._register_service(
             DOMAIN,
@@ -237,6 +239,7 @@ class ServiceManager:
             True,
             True,
             False,
+            supports_response=SupportsResponse.OPTIONAL,
         )
         self._register_service(
             DOMAIN,
@@ -257,8 +260,12 @@ class ServiceManager:
         requires_auth: bool = True,
         allow_from_api: bool = True,
         use_cache: bool = True,
+        supports_response: SupportsResponse | None = None,
     ):
-        self.hass.services.async_register(domain, name, callback, schema=schema)
+        kwargs = {"schema": schema}
+        if supports_response is not None:
+            kwargs["supports_response"] = supports_response
+        self.hass.services.async_register(domain, name, callback, **kwargs)
         if allow_from_api:
             self.hass.http.register_view(
                 XTGeneralView(name, callback, requires_auth, use_cache)
@@ -587,7 +594,7 @@ class ServiceManager:
 
     async def _handle_get_temp_passwords(
         self, event: XTEventData
-    ) -> list[dict[str, Any]] | None:
+    ) -> dict[str, Any] | None:
         try:
             source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
             device_id_raw = event.data.get(CONF_DEVICE_ID, None)
@@ -620,7 +627,7 @@ class ServiceManager:
                 if isinstance(response, list):
                     all_passwords.extend(response)
 
-            return all_passwords
+            return {"passwords": all_passwords}
         except HomeAssistantError:
             raise
         except Exception as e:
