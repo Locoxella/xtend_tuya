@@ -1261,17 +1261,6 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     XTDeviceWatcherCategory.IOT_API,
                 )
 
-                if not res.get("success", False):
-                    res = api_to_use.post(
-                        f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
-                        payload,
-                    )
-                    self.multi_manager.device_watcher.report_message(
-                        device.id,
-                        f"API create_temporary_password fallback result (/v1.0/devices/door-lock/temp-passwords): {res}",
-                        XTDeviceWatcherCategory.IOT_API,
-                    )
-
                 if res.get("success", False):
                     LOGGER.info(
                         f"[Tuya Temp Password] Successfully created temporary password '{name}' for device {device.id}. Result: {res.get('result')}"

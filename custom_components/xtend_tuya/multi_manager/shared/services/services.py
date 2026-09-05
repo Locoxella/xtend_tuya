@@ -440,6 +440,16 @@ class ServiceManager:
                                 f"Tuya API Error for device '{dev_id}': No permissions (code {code}). "
                                 "Falta autorizar el servicio 'Smart Lock Service' en iot.tuya.com (Cloud > Development > Tu Proyecto > Service API)."
                             )
+                        elif code == 2314 or "password length" in str(msg).lower():
+                            err_msg = (
+                                f"Tuya API Error for device '{dev_id}': Longitud de clave incorrecta (code {code}). "
+                                f"Esta cerradura requiere un PIN numérico de 7 dígitos exactos (ingresaste {len(str(password))} dígitos)."
+                            )
+                        elif code == 1109:
+                            err_msg = (
+                                f"Tuya API Error for device '{dev_id}': Parámetros inválidos (code 1109). "
+                                "Verifica que el PIN tenga 7 dígitos numéricos y fechas válidas."
+                            )
                         else:
                             err_msg = f"Tuya API Error for device '{dev_id}': {msg} (code {code})" if code else f"Tuya API Error for device '{dev_id}': {msg}"
                         LOGGER.error(f"[Tuya Temp Password Service] {err_msg}")
