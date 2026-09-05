@@ -2271,18 +2271,24 @@ async def async_setup_entry(
     def async_add_lock_passcode_sensors(device_map) -> None:
         if hass_data.manager is None:
             return
-        entities: list[XTLockDynamicPasscodeSensor] = []
-        for device_id in device_map:
-            if device_id in added_lock_sensors:
-                continue
-            if device := hass_data.manager.device_map.get(device_id):
-                if device.category in ("ms", "jtmspro", "videolock", "jtmsbh") or any(
-                    dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock")
-                ):
-                    added_lock_sensors.add(device_id)
-                    entities.append(XTLockDynamicPasscodeSensor(device, hass_data.manager))
-        if entities:
-            async_add_entities(entities)
+
+        async def _async_check_and_add() -> None:
+            entities: list[XTLockDynamicPasscodeSensor] = []
+            for device_id in device_map:
+                if device_id in added_lock_sensors:
+                    continue
+                if device := hass_data.manager.device_map.get(device_id):
+                    should_add = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                        XTLockDynamicPasscodeSensor.should_entity_be_added, device, hass_data.manager
+                    )
+                    if should_add:
+                        added_lock_sensors.add(device_id)
+                        entities.append(XTLockDynamicPasscodeSensor(device, hass_data.manager))
+            if entities:
+                async_add_entities(entities)
+
+        hass.async_create_task(_async_check_and_add())
+
 
     hass_data.manager.register_device_descriptors(this_platform, supported_descriptors)
     async_discover_device([*hass_data.manager.device_map])
@@ -2787,6 +2793,31 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
             "valid_until": self._valid_until,
             "device_id": self.device.id,
         }
+
+    @staticmethod
+    def should_entity_be_added(device: XTDevice, device_manager: MultiManager) -> bool:
+        """Check if lock device supports dynamic passcodes."""
+        is_lock = device.category in ("ms", "jtmspro", "videolock", "jtmsbh") or any(
+            dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock")
+        )
+        if not is_lock:
+            return False
+
+        has_passcode_cap = any(
+            dp in device.status for dp in ("unlock_password", "unlock_method_create", "temp_password", "dynamic_password", "password_unlock_user")
+        ) or bool(getattr(device, "local_key", None) or (hasattr(device, "status") and device.status.get("local_key")))
+
+        if not has_passcode_cap:
+            return False
+
+        if account := device_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
+            if hasattr(account, "get_dynamic_password"):
+                res = account.get_dynamic_password(device)
+                if res and isinstance(res, dict) and res.get("dynamic_password"):
+                    return True
+
+        return False
+
 
 
 
