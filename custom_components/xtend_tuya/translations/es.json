@@ -112,11 +112,29 @@
             },
             "dp_time_clear_flag": {
                 "name": "Limpieza programada activada"
+            },
+            "xt_generic_binary_sensor": {
+                "name": "{name}"
             }
         },
         "button": {
             "generate_dynamic_passcode": {
                 "name": "Generar c\u00f3digo de acceso din\u00e1mico"
+            },
+            "xt_import_electrical_history": {
+                "name": "Importar historial de consumo"
+            },
+            "xt_reset_add_ele": {
+                "name": "Restablecer consumo"
+            },
+            "xt_add_ir_device": {
+                "name": "Agregar dispositivo IR"
+            },
+            "xt_add_ir_device_key": {
+                "name": "Registrar nueva tecla IR"
+            },
+            "xt_generic_button": {
+                "name": "{name}"
             },
             "deep_clean": {
                 "name": "Limpieza a fondo"
