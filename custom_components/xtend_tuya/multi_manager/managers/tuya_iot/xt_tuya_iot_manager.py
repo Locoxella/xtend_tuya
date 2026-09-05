@@ -1179,6 +1179,41 @@ class XTIOTDeviceManager(TuyaDeviceManager):
             )
         return False
 
+    def get_door_lock_password_ticket_data(
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
+    ) -> tuple[str | None, str | None]:
+        """Obtain password ticket_id and ticket_key for a door lock."""
+        api_to_use = (
+            api
+            if api is not None
+            else device.get_preference(
+                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
+                self.api,
+            )
+        )
+        try:
+            ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
+            self.multi_manager.device_watcher.report_message(
+                device.id,
+                f"API remote unlock ticket: {ticket}",
+                XTDeviceWatcherCategory.IOT_API,
+            )
+            if ticket.get("success", False):
+                device.set_preference(
+                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
+                    api_to_use,
+                )
+                res_data: dict[str, Any] = ticket.get("result", {})
+                t_id = res_data.get("ticket_id")
+                t_key = res_data.get("ticket_key")
+                return t_id, t_key
+        except Exception as e:
+            LOGGER.error(
+                f"[Tuya Lock Ticket] Exception while obtaining password ticket data for device {device.id}: {e}",
+                exc_info=True,
+            )
+        return None, None
+
     def create_temporary_password(
         self,
         device: XTDevice,
@@ -1190,14 +1225,44 @@ class XTIOTDeviceManager(TuyaDeviceManager):
     ) -> dict[str, Any]:
         """Create a temporary password for a smart lock via Tuya Cloud API."""
         api_to_use = api or self.api
-        ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
+        ticket_id, ticket_key = self.get_door_lock_password_ticket_data(device, api_to_use)
+        if not ticket_id:
+            ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
 
         now_ms = int(time.time() * 1000)
         eff_time = effective_time if effective_time is not None else now_ms
         inv_time = invalid_time if invalid_time is not None else now_ms + (24 * 3600 * 1000)
 
+        encrypted_pass = str(password)
+        if ticket_key and hasattr(api_to_use, "access_secret") and api_to_use.access_secret:
+            try:
+                from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+                from cryptography.hazmat.backends import default_backend
+
+                sec_bytes = api_to_use.access_secret.encode("utf-8")
+                tk_bytes = bytes.fromhex(ticket_key)
+                cipher_dec = Cipher(algorithms.AES(sec_bytes), modes.ECB(), backend=default_backend())
+                decryptor = cipher_dec.decryptor()
+                raw_dec = decryptor.update(tk_bytes) + decryptor.finalize()
+
+                pad_val = raw_dec[-1]
+                if 1 <= pad_val <= 16 and raw_dec.endswith(bytes([pad_val]) * pad_val):
+                    key_16 = raw_dec[:-pad_val]
+                else:
+                    key_16 = raw_dec[:16]
+
+                pin_str = str(password)
+                pad_l = 16 - (len(pin_str) % 16)
+                padded_pin = pin_str.encode("utf-8") + bytes([pad_l] * pad_l)
+                cipher_enc = Cipher(algorithms.AES(key_16), modes.ECB(), backend=default_backend())
+                encryptor = cipher_enc.encryptor()
+                enc_bytes = encryptor.update(padded_pin) + encryptor.finalize()
+                encrypted_pass = enc_bytes.hex()
+            except Exception as err:
+                LOGGER.warning(f"[Tuya Temp Password] Encryption attempt failed for device {device.id}: {err}")
+
         payload: dict[str, Any] = {
-            "password": str(password),
+            "password": encrypted_pass,
             "name": name or "HA Temp Password",
             "effective_time": eff_time,
             "invalid_time": inv_time,
@@ -1207,15 +1272,27 @@ class XTIOTDeviceManager(TuyaDeviceManager):
 
         res: dict[str, Any] = {}
         try:
+            # Primary official Tuya lock temp password endpoint
             res = api_to_use.post(
-                f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
+                f"/v1.0/devices/{device.id}/door-lock/temp-password",
                 payload,
             )
             self.multi_manager.device_watcher.report_message(
                 device.id,
-                f"API create_temporary_password result (/v1.0/devices): {res}",
+                f"API create_temporary_password result (/v1.0/devices/door-lock/temp-password): {res}",
                 XTDeviceWatcherCategory.IOT_API,
             )
+
+            if not res.get("success", False):
+                res = api_to_use.post(
+                    f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
+                    payload,
+                )
+                self.multi_manager.device_watcher.report_message(
+                    device.id,
+                    f"API create_temporary_password fallback result (/v1.0/devices/door-lock/temp-passwords): {res}",
+                    XTDeviceWatcherCategory.IOT_API,
+                )
 
             if not res.get("success", False):
                 res = api_to_use.post(
