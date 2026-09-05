@@ -743,6 +743,23 @@ class XTTuyaIOTDeviceManagerInterface(XTDeviceManagerInterface):
             return None
         return self.iot_account.device_manager.get_dynamic_password(device, api)
 
+    def get_temporary_passwords(
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
+    ) -> list[dict[str, Any]]:
+        if self.iot_account is None:
+            return []
+        return self.iot_account.device_manager.get_temporary_passwords(device, api)
+
+    def delete_temporary_password(
+        self,
+        device: XTDevice,
+        password_id: int | str,
+        api: XTIOTOpenAPI | None = None,
+    ) -> dict[str, Any]:
+        if self.iot_account is None:
+            return {"success": False, "error": "No IoT account available"}
+        return self.iot_account.device_manager.delete_temporary_password(device, password_id, api)
+
 
     def call_api(
         self, method: str, url: str, payload: str | None
