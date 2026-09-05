@@ -288,6 +288,60 @@
         "reload": {
             "name": "[%key:common::action::reload%]",
             "description": "Reloads the automation configuration."
+        },
+        "create_temporary_password": {
+            "name": "Create Temporary Password",
+            "description": "Creates a time-restricted temporary passcode for a Tuya smart lock.",
+            "fields": {
+                "device_id": {
+                    "name": "Device",
+                    "description": "The Tuya smart lock device."
+                },
+                "password": {
+                    "name": "Password / PIN",
+                    "description": "Numeric passcode to create (7 digits required for residential locks, e.g. 1266455)."
+                },
+                "name": {
+                    "name": "Name / Alias",
+                    "description": "An optional name or label for the temporary passcode."
+                },
+                "effective_time": {
+                    "name": "Effective Date & Time",
+                    "description": "Start date and time (defaults to now)."
+                },
+                "invalid_time": {
+                    "name": "Expiration Date & Time",
+                    "description": "Expiration date and time (defaults to 24h from now)."
+                }
+            }
+        },
+        "get_dynamic_passcode": {
+            "name": "Get Dynamic Passcode",
+            "description": "Fetches a new 5-minute dynamic passcode for a Tuya smart lock on demand."
+        },
+        "get_temporary_passwords": {
+            "name": "Get Temporary Passwords",
+            "description": "Fetches all active temporary passcodes created for a Tuya smart lock.",
+            "fields": {
+                "device_id": {
+                    "name": "Device",
+                    "description": "The Tuya smart lock device."
+                }
+            }
+        },
+        "delete_temporary_password": {
+            "name": "Delete Temporary Password",
+            "description": "Deletes a temporary passcode from a Tuya smart lock by password ID.",
+            "fields": {
+                "device_id": {
+                    "name": "Device",
+                    "description": "The Tuya smart lock device."
+                },
+                "password_id": {
+                    "name": "Password ID",
+                    "description": "The numeric ID of the temporary password to delete."
+                }
+            }
         }
     },
     "entity": {
@@ -1429,9 +1483,9 @@
             "horizontal_fan_angle": {
                 "name": "Horizontal swing flap angle",
                 "state": {
-                    "30": "30\u00b0",
-                    "60": "60\u00b0",
-                    "90": "90\u00b0"
+                    "30": "30°",
+                    "60": "60°",
+                    "90": "90°"
                 }
             },
             "humidifier_level": {
@@ -1612,9 +1666,9 @@
             "vertical_fan_angle": {
                 "name": "Vertical swing flap angle",
                 "state": {
-                    "30": "30\u00b0",
-                    "60": "60\u00b0",
-                    "90": "90\u00b0"
+                    "30": "30°",
+                    "60": "60°",
+                    "90": "90°"
                 }
             },
             "volume": {

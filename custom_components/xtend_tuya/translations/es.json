@@ -90,6 +90,30 @@
     "get_dynamic_passcode": {
       "name": "Obtener código dinámico",
       "description": "Consulta un nuevo código dinámico de 5 minutos a la nube de Tuya."
+    },
+    "get_temporary_passwords": {
+      "name": "Obtener contraseñas temporales",
+      "description": "Obtiene todas las contraseñas temporales activas creadas para una cerradura inteligente Tuya.",
+      "fields": {
+        "device_id": {
+          "name": "Dispositivo",
+          "description": "La cerradura inteligente Tuya."
+        }
+      }
+    },
+    "delete_temporary_password": {
+      "name": "Eliminar contraseña temporal",
+      "description": "Elimina una contraseña temporal de una cerradura inteligente Tuya usando su ID.",
+      "fields": {
+        "device_id": {
+          "name": "Dispositivo",
+          "description": "La cerradura inteligente Tuya."
+        },
+        "password_id": {
+          "name": "ID de contraseña",
+          "description": "El ID numérico de la contraseña temporal a eliminar."
+        }
+      }
     }
   },
   "entity": {
