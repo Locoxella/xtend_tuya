@@ -1280,38 +1280,26 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 "valid_until": window_end,
             }
 
-        # 1. Try local calculation first (0 Cloud API calls if local_key present)
-        local_key = getattr(device, "local_key", "") or ""
-        if not local_key and hasattr(device, "status") and isinstance(device.status, dict):
-            local_key = device.status.get("local_key", "")
-        if local_key:
-            code = self._calculate_offline_dynamic_passcode(local_key, device.id)
-            if code:
-                LOGGER.error(f"[Tuya Lock Passcode] Local calculation succeeded for {device.id}: {code}")
-                self._passcode_cache[cache_key] = {"window": current_window, "dynamic_password": code}
-                return {
-                    "dynamic_password": code,
-                    "valid_until": window_end,
-                }
-
-        # 2. Cloud API fetch (only if local_key missing or local calculation fails)
+        # 1. Cloud API fetch first (cached per 5-minute window, ~1 call every 5 mins)
         api_to_use = api or self.api
         ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
 
         endpoints = [
             f"/v1.0/devices/{device.id}/door-lock/dynamic-password",
             f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords",
+            f"/v1.0/smart-lock/devices/{device.id}/dynamic-password",
             f"/v1.0/devices/{device.id}/door-lock/dynamic-passwords",
             f"/v1.0/smart-lock/devices/{device.id}/password-free/dynamic-password",
         ]
         if ticket_id:
             endpoints.insert(0, f"/v1.0/devices/{device.id}/door-lock/dynamic-password?ticket_id={ticket_id}")
+            endpoints.insert(1, f"/v1.0/smart-lock/devices/{device.id}/dynamic-password?ticket_id={ticket_id}")
 
         errors_log = []
         for endpoint in endpoints:
             try:
                 res = api_to_use.get(endpoint)
-                LOGGER.error(f"[Tuya Lock Passcode] GET {endpoint} response: {res}")
+                LOGGER.info(f"[Tuya Lock Passcode] GET {endpoint} response: {res}")
                 if res and res.get("success", False):
                     result = res.get("result", {})
                     passcode = None
@@ -1330,7 +1318,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                             passcode = f"{int(raw_code):08d}" if str(raw_code).isdigit() else str(raw_code)
 
                     if passcode:
-                        LOGGER.error(f"[Tuya Lock Passcode] Cloud API succeeded for {device.id}: {passcode}")
+                        LOGGER.info(f"[Tuya Lock Passcode] Cloud API succeeded for {device.id}: {passcode}")
                         self._passcode_cache[cache_key] = {"window": current_window, "dynamic_password": passcode}
                         return {
                             "dynamic_password": passcode,
@@ -1340,6 +1328,20 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     errors_log.append(f"{endpoint} -> {res}")
             except Exception as e:
                 errors_log.append(f"{endpoint} exception -> {e}")
+
+        # 2. Fallback to local calculation if Cloud API endpoints fail
+        local_key = getattr(device, "local_key", "") or ""
+        if not local_key and hasattr(device, "status") and isinstance(device.status, dict):
+            local_key = device.status.get("local_key", "")
+        if local_key:
+            code = self._calculate_offline_dynamic_passcode(local_key, device.id)
+            if code:
+                LOGGER.warning(f"[Tuya Lock Passcode] Cloud API failed ({errors_log}), falling back to local calculation for {device.id}: {code}")
+                self._passcode_cache[cache_key] = {"window": current_window, "dynamic_password": code}
+                return {
+                    "dynamic_password": code,
+                    "valid_until": window_end,
+                }
 
         LOGGER.error(
             f"[Tuya Lock Passcode] Failed to obtain passcode for {device.id}. "
