@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
     SensorExtraStoredData,
     RestoreSensor,
+    SensorEntityDescription,
 )
 from homeassistant.components.sensor.const import (
     DEVICE_CLASS_UNITS as SENSOR_DEVICE_CLASS_UNITS,
@@ -2256,6 +2257,7 @@ async def async_setup_entry(
                         )
                     )
         async_add_entities(entities)
+        async_add_lock_passcode_sensors(device_map)
         if restrict_dpcode is None:
             hass_data.manager.add_post_setup_callback(
                 XTMultiManagerPostSetupCallbackPriority.PRIORITY_LAST,
@@ -2263,23 +2265,27 @@ async def async_setup_entry(
                 device_map,
             )
 
+    added_lock_sensors: set[str] = set()
+
     @callback
     def async_add_lock_passcode_sensors(device_map) -> None:
         if hass_data.manager is None:
             return
         entities: list[XTLockDynamicPasscodeSensor] = []
         for device_id in device_map:
+            if device_id in added_lock_sensors:
+                continue
             if device := hass_data.manager.device_map.get(device_id):
                 if device.category in ("ms", "jtmspro", "videolock", "jtmsbh") or any(
                     dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock")
                 ):
+                    added_lock_sensors.add(device_id)
                     entities.append(XTLockDynamicPasscodeSensor(device, hass_data.manager))
         if entities:
             async_add_entities(entities)
 
     hass_data.manager.register_device_descriptors(this_platform, supported_descriptors)
     async_discover_device([*hass_data.manager.device_map])
-    async_add_lock_passcode_sensors([*hass_data.manager.device_map])
 
     entry.async_on_unload(
         async_dispatcher_connect(hass, TUYA_DISCOVERY_NEW, async_discover_device)
@@ -2726,15 +2732,22 @@ class XTSensorEntity(XTEntity, TuyaSensorEntity, RestoreSensor):  # type: ignore
         return value
 
 
-class XTLockDynamicPasscodeSensor(RestoreSensor):
+class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
     """Sensor for displaying current 5-minute Tuya Lock Dynamic Passcode."""
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:lock-clock"
 
     def __init__(self, device: XTDevice, device_manager: MultiManager) -> None:
-        self.device = device
-        self.device_manager = device_manager
+        description = SensorEntityDescription(
+            key="dynamic_passcode",
+            name="Dynamic Passcode",
+        )
+        super().__init__(
+            device=device,
+            device_manager=device_manager,
+            description=description,
+        )
         self._attr_unique_id = f"{device.id}_dynamic_passcode"
         self._attr_name = "Dynamic Passcode"
         self._passcode: str | None = None
@@ -2772,4 +2785,5 @@ class XTLockDynamicPasscodeSensor(RestoreSensor):
             "valid_until": self._valid_until,
             "device_id": self.device.id,
         }
+
 
