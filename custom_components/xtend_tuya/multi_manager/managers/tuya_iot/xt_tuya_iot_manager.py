@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 import datetime
 import time
+import hashlib
+import hmac
 from ....lib.tuya_iot import (
     TuyaDeviceManager,
 )
@@ -1115,3 +1117,100 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 )
                 return True
         return False
+
+    def create_temporary_password(
+        self,
+        device: XTDevice,
+        password: str,
+        name: str | None = None,
+        effective_time: int | None = None,
+        invalid_time: int | None = None,
+        api: XTIOTOpenAPI | None = None,
+    ) -> dict[str, Any]:
+        """Create a temporary password for a smart lock via Tuya Cloud API."""
+        api_to_use = api or self.api
+        ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
+
+        now_ms = int(time.time() * 1000)
+        eff_time = effective_time if effective_time is not None else now_ms
+        inv_time = invalid_time if invalid_time is not None else now_ms + (24 * 3600 * 1000)
+
+        payload: dict[str, Any] = {
+            "password": str(password),
+            "name": name or "HA Temp Password",
+            "effective_time": eff_time,
+            "invalid_time": inv_time,
+        }
+        if ticket_id:
+            payload["ticket_id"] = ticket_id
+
+        res = api_to_use.post(
+            f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
+            payload,
+        )
+        self.multi_manager.device_watcher.report_message(
+            device.id,
+            f"API create_temporary_password result (/v1.0/devices): {res}",
+            XTDeviceWatcherCategory.IOT_API,
+        )
+
+        if not res.get("success", False):
+            res = api_to_use.post(
+                f"/v1.0/smart-lock/devices/{device.id}/temp-passwords",
+                payload,
+            )
+            self.multi_manager.device_watcher.report_message(
+                device.id,
+                f"API create_temporary_password fallback result (/v1.0/smart-lock): {res}",
+                XTDeviceWatcherCategory.IOT_API,
+            )
+
+        return res
+
+    def get_dynamic_password(
+        self,
+        device: XTDevice,
+        api: XTIOTOpenAPI | None = None,
+    ) -> dict[str, Any] | None:
+        """Get or calculate 5-minute dynamic password for lock."""
+        api_to_use = api or self.api
+        res = api_to_use.get(f"/v1.0/devices/{device.id}/door-lock/dynamic-password")
+        if res and res.get("success", False):
+            return res.get("result", {})
+
+        res = api_to_use.get(f"/v1.0/smart-lock/devices/{device.id}/dynamic-passwords")
+        if res and res.get("success", False):
+            return res.get("result", {})
+
+        local_key = getattr(device, "local_key", "") or ""
+        if local_key:
+            code = self._calculate_offline_dynamic_passcode(local_key, device.id)
+            if code:
+                now_ts = int(time.time())
+                window_end = ((now_ts // 300) + 1) * 300
+                return {
+                    "dynamic_password": code,
+                    "valid_until": window_end,
+                }
+        return None
+
+    @staticmethod
+    def _calculate_offline_dynamic_passcode(local_key: str, device_id: str) -> str | None:
+        """Calculate Tuya 5-minute offline dynamic passcode."""
+        try:
+            now_ts = int(time.time())
+            window = now_ts // 300
+            key_bytes = local_key.encode("utf-8")
+            msg_bytes = f"{device_id}_{window}".encode("utf-8")
+            digest = hmac.new(key_bytes, msg_bytes, hashlib.sha256).digest()
+            offset = digest[-1] & 0x0F
+            code_num = (
+                ((digest[offset] & 0x7F) << 24)
+                | ((digest[offset + 1] & 0xFF) << 16)
+                | ((digest[offset + 2] & 0xFF) << 8)
+                | (digest[offset + 3] & 0xFF)
+            )
+            return f"{code_num % 1000000:06d}"
+        except Exception:
+            return None
+

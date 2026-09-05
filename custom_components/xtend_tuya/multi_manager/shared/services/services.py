@@ -80,6 +80,19 @@ SERVICE_WEBRTC_DEBUG_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_CREATE_TEMP_PASSWORD = "create_temporary_password"
+SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Required("password"): cv.string,
+        vol.Optional("name"): cv.string,
+        vol.Optional("effective_time"): cv.positive_int,
+        vol.Optional("invalid_time"): cv.positive_int,
+        vol.Optional(CONF_SOURCE): cv.string,
+    }
+)
+
+
 
 class ServiceManager:
     def __init__(self, multi_manager: mm.MultiManager) -> None:
@@ -128,6 +141,15 @@ class ServiceManager:
             SERVICE_WEBRTC_DEBUG,
             self._handle_webrtc_debug,
             SERVICE_WEBRTC_DEBUG_SCHEMA,
+            True,
+            True,
+            False,
+        )
+        self._register_service(
+            DOMAIN,
+            SERVICE_CREATE_TEMP_PASSWORD,
+            self._handle_create_temp_password,
+            SERVICE_CREATE_TEMP_PASSWORD_SCHEMA,
             True,
             True,
             False,
@@ -239,6 +261,33 @@ class ServiceManager:
                 ):
                     return debug_output
         return None
+
+    async def _handle_create_temp_password(
+        self, event: XTEventData
+    ) -> web.Response | dict[str, Any] | None:
+        source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
+        device_id = event.data.get(CONF_DEVICE_ID, None)
+        password = event.data.get("password", None)
+        name = event.data.get("name", "HA Temp Password")
+        effective_time = event.data.get("effective_time", None)
+        invalid_time = event.data.get("invalid_time", None)
+        if not device_id or not password:
+            return None
+        if multi_manager := self._get_correct_multi_manager(source, device_id):
+            if account := multi_manager.get_account_by_name(source):
+                if device := multi_manager.device_map.get(device_id):
+                    if hasattr(account, "create_temporary_password"):
+                        response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
+                            account.create_temporary_password,
+                            device,
+                            password,
+                            name,
+                            effective_time,
+                            invalid_time,
+                        )
+                        return response
+        return None
+
 
     async def _handle_webrtc_sdp_exchange(
         self, event: XTEventData

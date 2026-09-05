@@ -62,6 +62,7 @@ from .const import (
     LOGGER,
     XTMultiManagerProperties,
     XTDeviceWatcherCategory,
+    MESSAGE_SOURCE_TUYA_IOT,
 )
 from .entity import (
     XTEntity,
@@ -2262,12 +2263,28 @@ async def async_setup_entry(
                 device_map,
             )
 
+    @callback
+    def async_add_lock_passcode_sensors(device_map) -> None:
+        if hass_data.manager is None:
+            return
+        entities: list[XTLockDynamicPasscodeSensor] = []
+        for device_id in device_map:
+            if device := hass_data.manager.device_map.get(device_id):
+                if device.category in ("ms", "jtmspro", "videolock", "jtmsbh") or any(
+                    dp in device.status for dp in ("lock_motor_state", "unlock_password", "unlock_method_create", "accessory_lock")
+                ):
+                    entities.append(XTLockDynamicPasscodeSensor(device, hass_data.manager))
+        if entities:
+            async_add_entities(entities)
+
     hass_data.manager.register_device_descriptors(this_platform, supported_descriptors)
     async_discover_device([*hass_data.manager.device_map])
+    async_add_lock_passcode_sensors([*hass_data.manager.device_map])
 
     entry.async_on_unload(
         async_dispatcher_connect(hass, TUYA_DISCOVERY_NEW, async_discover_device)
     )
+
 
 
 # Some Bluetooth devices without a hub always report as offline in the Tuya cloud
@@ -2707,3 +2724,52 @@ class XTSensorEntity(XTEntity, TuyaSensorEntity, RestoreSensor):  # type: ignore
         else:
             value = super().native_value
         return value
+
+
+class XTLockDynamicPasscodeSensor(RestoreSensor):
+    """Sensor for displaying current 5-minute Tuya Lock Dynamic Passcode."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:lock-clock"
+
+    def __init__(self, device: XTDevice, device_manager: MultiManager) -> None:
+        self.device = device
+        self.device_manager = device_manager
+        self._attr_unique_id = f"{device.id}_dynamic_passcode"
+        self._attr_name = "Dynamic Passcode"
+        self._passcode: str | None = None
+        self._valid_until: int | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._update_passcode()
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass, self._async_update_passcode, second=[0, 30]
+            )
+        )
+
+    @callback
+    def _async_update_passcode(self, _=None) -> None:
+        self._update_passcode()
+        self.async_write_ha_state()
+
+    def _update_passcode(self) -> None:
+        if account := self.device_manager.get_account_by_name(MESSAGE_SOURCE_TUYA_IOT):
+            if hasattr(account, "get_dynamic_password"):
+                res = account.get_dynamic_password(self.device)
+                if res and isinstance(res, dict):
+                    self._passcode = res.get("dynamic_password", None)
+                    self._valid_until = res.get("valid_until", None)
+
+    @property
+    def native_value(self) -> str | None:
+        return self._passcode
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "valid_until": self._valid_until,
+            "device_id": self.device.id,
+        }
+
