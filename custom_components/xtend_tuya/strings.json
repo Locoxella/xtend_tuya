@@ -414,6 +414,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "Generate Dynamic Passcode"
+            },
             "change_litter_bag": {
                 "name": "Change litter bag"
             },
