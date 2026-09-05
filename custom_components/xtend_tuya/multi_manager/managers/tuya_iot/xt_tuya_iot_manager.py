@@ -694,12 +694,8 @@ class XTIOTDeviceManager(TuyaDeviceManager):
     def test_lock_api_subscription(
         self, device: XTDevice, api: XTIOTOpenAPI | None = None
     ) -> bool:
-        if api is None:
-            if self.test_lock_api_subscription(device, self.api):
-                if self.test_lock_api_subscription(device, self.non_user_api):
-                    return True
-            return False
-        ticket = api.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
+        api_to_use = api or self.api
+        ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
         if code := ticket.get("code", None):
             if code in TUYA_TEST_API_BAD_RETURN_CODES:
                 return False
@@ -1041,15 +1037,9 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         return supported_unlock_types
 
     def get_door_lock_password_ticket(
-        self, device: XTDevice, api: XTIOTOpenAPI
+        self, device: XTDevice, api: XTIOTOpenAPI | None = None
     ) -> str | None:
-        api_to_use = cast(
-            XTIOTOpenAPI,
-            device.get_preference(
-                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
-                api,
-            ),
-        )
+        api_to_use = api or self.api
         try:
             ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
             self.multi_manager.device_watcher.report_message(
@@ -1058,10 +1048,6 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 XTDeviceWatcherCategory.IOT_API,
             )
             if ticket.get("success", False):
-                device.set_preference(
-                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
-                    api_to_use,
-                )
                 result: dict[str, Any] = ticket.get("result", {})
                 if ticket_id := result.get("ticket_id", None):
                     LOGGER.debug(f"[Tuya Lock Ticket] Ticket obtained for device {device.id}: {ticket_id}")
@@ -1183,14 +1169,7 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         self, device: XTDevice, api: XTIOTOpenAPI | None = None
     ) -> tuple[str | None, str | None]:
         """Obtain password ticket_id and ticket_key for a door lock."""
-        api_to_use = (
-            api
-            if api is not None
-            else device.get_preference(
-                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
-                self.api,
-            )
-        )
+        api_to_use = api or self.api
         try:
             ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
             self.multi_manager.device_watcher.report_message(
@@ -1199,10 +1178,6 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 XTDeviceWatcherCategory.IOT_API,
             )
             if ticket.get("success", False):
-                device.set_preference(
-                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
-                    api_to_use,
-                )
                 res_data: dict[str, Any] = ticket.get("result", {})
                 t_id = res_data.get("ticket_id")
                 t_key = res_data.get("ticket_key")
