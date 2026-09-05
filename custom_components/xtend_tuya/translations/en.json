@@ -1678,7 +1678,16 @@
         },
         "sensor": {
             "dynamic_passcode": {
-                "name": "Dynamic Passcode"
+                "name": "Dynamic Passcode",
+                "state": {
+                    "expired": "Expired"
+                }
+            },
+            "dynamic_passcode_expires_at": {
+                "name": "Dynamic Passcode Expiration Time"
+            },
+            "dynamic_passcode_remaining_seconds": {
+                "name": "Dynamic Passcode Remaining Time"
             },
             "a_current": {
                 "name": "Current A"

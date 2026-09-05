@@ -2275,7 +2275,7 @@ async def async_setup_entry(
             return
 
         async def _async_check_and_add() -> None:
-            entities: list[XTLockDynamicPasscodeSensor] = []
+            entities: list[XTEntity] = []
             for device_id in device_map:
                 if device_id in added_lock_sensors:
                     continue
@@ -2285,7 +2285,10 @@ async def async_setup_entry(
                     )
                     if should_add:
                         added_lock_sensors.add(device_id)
-                        entities.append(XTLockDynamicPasscodeSensor(device, hass_data.manager))
+                        main_sensor = XTLockDynamicPasscodeSensor(device, hass_data.manager)
+                        entities.append(main_sensor)
+                        entities.append(XTLockDynamicPasscodeExpiresAtSensor(device, hass_data.manager, main_sensor))
+                        entities.append(XTLockDynamicPasscodeRemainingSensor(device, hass_data.manager, main_sensor))
             if entities:
                 async_add_entities(entities)
 
@@ -2813,6 +2816,7 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
                         )
 
                         self.async_write_ha_state()
+                        async_dispatcher_send(self.hass, f"xtend_tuya_passcode_changed_{self.device.id}")
                         return res
                     else:
                         LOGGER.warning(f"[Tuya Lock Passcode Sensor] Could not retrieve passcode for device {self.device.id}, res={res}")
@@ -2826,11 +2830,11 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
 
     @callback
     def _async_clear_passcode(self, _=None) -> None:
-        """Clear expired passcode and reset sensor state to None / unavailable."""
+        """Clear expired passcode and reset sensor state to expired."""
         self._passcode = None
         self._valid_until = None
         self._unsub_timer = None
-        LOGGER.info(f"[Tuya Lock Passcode Sensor] Dynamic passcode expired for {self.entity_id}, state reset to unavailable.")
+        LOGGER.info(f"[Tuya Lock Passcode Sensor] Dynamic passcode expired for {self.entity_id}, state reset to expired.")
         self.hass.bus.async_fire(
             "xtend_tuya_dynamic_passcode_expired",
             {
@@ -2839,11 +2843,14 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
             },
         )
         self.async_write_ha_state()
+        async_dispatcher_send(self.hass, f"xtend_tuya_passcode_changed_{self.device.id}")
 
     @property
     def native_value(self) -> str | None:
+        if not self._passcode:
+            return "expired"
         if self._valid_until and int(time.time()) > self._valid_until:
-            return None
+            return "expired"
         return self._passcode
 
     @property
@@ -2864,7 +2871,6 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
             "device_id": self.device.id,
         }
 
-
     @staticmethod
     def should_entity_be_added(device: XTDevice, device_manager: MultiManager) -> bool:
         """Check if lock device supports dynamic passcodes."""
@@ -2879,6 +2885,99 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         ) or bool(getattr(device, "local_key", None) or (hasattr(device, "status") and device.status.get("local_key")))
 
         return has_passcode_cap
+
+
+class XTLockDynamicPasscodeExpiresAtSensor(XTEntity, RestoreSensor):  # type: ignore
+    """Auxiliary diagnostic sensor for dynamic passcode expiration timestamp (disabled by default)."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:clock-end"
+    _attr_entity_registry_enabled_default = False
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, device: XTDevice, device_manager: MultiManager, main_sensor: XTLockDynamicPasscodeSensor) -> None:
+        description = SensorEntityDescription(
+            key="dynamic_passcode_expires_at",
+            name="Dynamic Passcode Expiration Time",
+            translation_key="dynamic_passcode_expires_at",
+            device_class=SensorDeviceClass.TIMESTAMP,
+            entity_registry_enabled_default=False,
+        )
+        super().__init__(
+            device=device,
+            device_manager=device_manager,
+            description=description,
+        )
+        self._main_sensor = main_sensor
+        self._attr_unique_id = f"{device.id}_dynamic_passcode_expires_at"
+        self._attr_translation_key = "dynamic_passcode_expires_at"
+        self._attr_entity_registry_enabled_default = False
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, f"xtend_tuya_passcode_changed_{self.device.id}", self._async_update_state
+            )
+        )
+
+    @callback
+    def _async_update_state(self) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> datetime | None:
+        if self._main_sensor._passcode and self._main_sensor._valid_until:
+            now_ts = int(time.time())
+            if self._main_sensor._valid_until > now_ts:
+                return datetime.fromtimestamp(self._main_sensor._valid_until, UTC)
+        return None
+
+
+class XTLockDynamicPasscodeRemainingSensor(XTEntity, RestoreSensor):  # type: ignore
+    """Auxiliary diagnostic sensor for dynamic passcode remaining seconds (disabled by default)."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:timer-sand"
+    _attr_entity_registry_enabled_default = False
+    _attr_native_unit_of_measurement = "s"
+
+    def __init__(self, device: XTDevice, device_manager: MultiManager, main_sensor: XTLockDynamicPasscodeSensor) -> None:
+        description = SensorEntityDescription(
+            key="dynamic_passcode_remaining_seconds",
+            name="Dynamic Passcode Remaining Time",
+            translation_key="dynamic_passcode_remaining_seconds",
+            native_unit_of_measurement="s",
+            entity_registry_enabled_default=False,
+        )
+        super().__init__(
+            device=device,
+            device_manager=device_manager,
+            description=description,
+        )
+        self._main_sensor = main_sensor
+        self._attr_unique_id = f"{device.id}_dynamic_passcode_remaining_seconds"
+        self._attr_translation_key = "dynamic_passcode_remaining_seconds"
+        self._attr_entity_registry_enabled_default = False
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, f"xtend_tuya_passcode_changed_{self.device.id}", self._async_update_state
+            )
+        )
+
+    @callback
+    def _async_update_state(self) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> int:
+        if self._main_sensor._passcode and self._main_sensor._valid_until:
+            now_ts = int(time.time())
+            return max(0, self._main_sensor._valid_until - now_ts)
+        return 0
 
 
 

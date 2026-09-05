@@ -691,7 +691,16 @@
         },
         "sensor": {
             "dynamic_passcode": {
-                "name": "C\u00f3digo de acceso din\u00e1mico"
+                "name": "C\u00f3digo de acceso din\u00e1mico",
+                "state": {
+                    "expired": "Expirado"
+                }
+            },
+            "dynamic_passcode_expires_at": {
+                "name": "Hora de expiraci\u00f3n del c\u00f3digo din\u00e1mico"
+            },
+            "dynamic_passcode_remaining_seconds": {
+                "name": "Segundos restantes del c\u00f3digo din\u00e1mico"
             },
             "air_pressure": {
                 "name": "Presi\u00f3n del aire"
