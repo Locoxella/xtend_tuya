@@ -1050,31 +1050,47 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 api,
             ),
         )
-        ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
-        self.multi_manager.device_watcher.report_message(
-            device.id,
-            f"API remote unlock ticket: {ticket}",
-            XTDeviceWatcherCategory.IOT_API,
-        )
-        if ticket.get("success", False):
-            device.set_preference(
-                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
-                api_to_use,
+        try:
+            ticket = api_to_use.post(f"/v1.0/devices/{device.id}/door-lock/password-ticket")
+            self.multi_manager.device_watcher.report_message(
+                device.id,
+                f"API remote unlock ticket: {ticket}",
+                XTDeviceWatcherCategory.IOT_API,
             )
-            result: dict[str, Any] = ticket.get("result", {})
-            if ticket_id := result.get("ticket_id", None):
-                return ticket_id
+            if ticket.get("success", False):
+                device.set_preference(
+                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_GET_DOOR_LOCK_PASSWORD_TICKET}",
+                    api_to_use,
+                )
+                result: dict[str, Any] = ticket.get("result", {})
+                if ticket_id := result.get("ticket_id", None):
+                    LOGGER.debug(f"[Tuya Lock Ticket] Ticket obtained for device {device.id}: {ticket_id}")
+                    return ticket_id
+
+            LOGGER.warning(
+                f"[Tuya Lock Ticket] Failed to obtain password ticket for device {device.id}. Response: {ticket}"
+            )
+        except Exception as e:
+            LOGGER.error(
+                f"[Tuya Lock Ticket] Exception while obtaining password ticket for device {device.id}: {e}",
+                exc_info=True,
+            )
         return None
 
     def call_door_operate(self, device: XTDevice, open: str | bool, api: XTIOTOpenAPI) -> bool:
-        if ticket_id := self.get_door_lock_password_ticket(device, api):
-            api_to_use = cast(
-                XTIOTOpenAPI,
-                device.get_preference(
-                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPERATE}",
-                    api,
-                ),
-            )
+        ticket_id = self.get_door_lock_password_ticket(device, api)
+        if not ticket_id:
+            LOGGER.error(f"[Tuya Lock Operate] Cannot operate lock {device.id}: Ticket generation failed.")
+            return False
+
+        api_to_use = cast(
+            XTIOTOpenAPI,
+            device.get_preference(
+                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPERATE}",
+                api,
+            ),
+        )
+        try:
             lock_operation = api_to_use.post(
                 f"/v1.0/smart-lock/devices/{device.id}/password-free/door-operate",
                 {"ticket_id": ticket_id, "open": open},
@@ -1089,18 +1105,43 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPERATE}",
                     api_to_use,
                 )
+                LOGGER.info(f"[Tuya Lock Operate] Successfully operated door lock {device.id} (open={open}).")
+                if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                    self.multi_manager.hass.bus.async_fire(
+                        "xtend_tuya_lock_operated",
+                        {"device_id": device.id, "open": open, "success": True, "response": lock_operation},
+                    )
                 return True
+
+            LOGGER.error(
+                f"[Tuya Lock Operate] Door operate failed for {device.id} (open={open}). Response: {lock_operation}"
+            )
+            if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                self.multi_manager.hass.bus.async_fire(
+                    "xtend_tuya_lock_operated",
+                    {"device_id": device.id, "open": open, "success": False, "response": lock_operation},
+                )
+        except Exception as e:
+            LOGGER.error(
+                f"[Tuya Lock Operate] Exception during call_door_operate for {device.id}: {e}",
+                exc_info=True,
+            )
         return False
 
     def call_door_open(self, device: XTDevice, api: XTIOTOpenAPI) -> bool:
-        if ticket_id := self.get_door_lock_password_ticket(device, api):
-            api_to_use = cast(
-                XTIOTOpenAPI,
-                device.get_preference(
-                    f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPEN}",
-                    api,
-                ),
-            )
+        ticket_id = self.get_door_lock_password_ticket(device, api)
+        if not ticket_id:
+            LOGGER.error(f"[Tuya Lock Open] Cannot open door {device.id}: Ticket generation failed.")
+            return False
+
+        api_to_use = cast(
+            XTIOTOpenAPI,
+            device.get_preference(
+                f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPEN}",
+                api,
+            ),
+        )
+        try:
             lock_operation = api.post(
                 f"/v1.0/devices/{device.id}/door-lock/password-free/open-door",
                 {"ticket_id": ticket_id},
@@ -1115,7 +1156,27 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     f"{MESSAGE_SOURCE_TUYA_IOT}{XTDevice.XTDevicePreference.LOCK_CALL_DOOR_OPEN}",
                     api_to_use,
                 )
+                LOGGER.info(f"[Tuya Lock Open] Successfully opened door lock {device.id}.")
+                if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                    self.multi_manager.hass.bus.async_fire(
+                        "xtend_tuya_lock_opened",
+                        {"device_id": device.id, "success": True, "response": lock_operation},
+                    )
                 return True
+
+            LOGGER.error(
+                f"[Tuya Lock Open] Door open failed for {device.id}. Response: {lock_operation}"
+            )
+            if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                self.multi_manager.hass.bus.async_fire(
+                    "xtend_tuya_lock_opened",
+                    {"device_id": device.id, "success": False, "response": lock_operation},
+                )
+        except Exception as e:
+            LOGGER.error(
+                f"[Tuya Lock Open] Exception during call_door_open for {device.id}: {e}",
+                exc_info=True,
+            )
         return False
 
     def create_temporary_password(
@@ -1144,28 +1205,59 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         if ticket_id:
             payload["ticket_id"] = ticket_id
 
-        res = api_to_use.post(
-            f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
-            payload,
-        )
-        self.multi_manager.device_watcher.report_message(
-            device.id,
-            f"API create_temporary_password result (/v1.0/devices): {res}",
-            XTDeviceWatcherCategory.IOT_API,
-        )
-
-        if not res.get("success", False):
+        res: dict[str, Any] = {}
+        try:
             res = api_to_use.post(
-                f"/v1.0/smart-lock/devices/{device.id}/temp-passwords",
+                f"/v1.0/devices/{device.id}/door-lock/temp-passwords",
                 payload,
             )
             self.multi_manager.device_watcher.report_message(
                 device.id,
-                f"API create_temporary_password fallback result (/v1.0/smart-lock): {res}",
+                f"API create_temporary_password result (/v1.0/devices): {res}",
                 XTDeviceWatcherCategory.IOT_API,
             )
 
+            if not res.get("success", False):
+                res = api_to_use.post(
+                    f"/v1.0/smart-lock/devices/{device.id}/temp-passwords",
+                    payload,
+                )
+                self.multi_manager.device_watcher.report_message(
+                    device.id,
+                    f"API create_temporary_password fallback result (/v1.0/smart-lock): {res}",
+                    XTDeviceWatcherCategory.IOT_API,
+                )
+
+            if res.get("success", False):
+                LOGGER.info(
+                    f"[Tuya Temp Password] Successfully created temporary password '{name}' for device {device.id}."
+                )
+            else:
+                LOGGER.error(
+                    f"[Tuya Temp Password] Failed to create temporary password for device {device.id}. Response: {res}"
+                )
+
+            if hasattr(self.multi_manager, "hass") and self.multi_manager.hass:
+                self.multi_manager.hass.bus.async_fire(
+                    "xtend_tuya_temp_password_created",
+                    {
+                        "device_id": device.id,
+                        "name": name,
+                        "effective_time": eff_time,
+                        "invalid_time": inv_time,
+                        "success": res.get("success", False),
+                        "response": res,
+                    },
+                )
+        except Exception as e:
+            LOGGER.error(
+                f"[Tuya Temp Password] Exception during create_temporary_password for {device.id}: {e}",
+                exc_info=True,
+            )
+            res = {"success": False, "error": str(e)}
+
         return res
+
 
     def get_dynamic_password(
         self,
