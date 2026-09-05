@@ -1645,6 +1645,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "Dynamic Passcode"
+            },
             "a_current": {
                 "name": "Current A"
             },

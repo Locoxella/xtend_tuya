@@ -2750,6 +2750,7 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         description = SensorEntityDescription(
             key="dynamic_passcode",
             name="Dynamic Passcode",
+            translation_key="dynamic_passcode",
         )
         super().__init__(
             device=device,
@@ -2758,6 +2759,7 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         )
         self._attr_unique_id = f"{device.id}_dynamic_passcode"
         self._attr_name = "Dynamic Passcode"
+        self._attr_translation_key = "dynamic_passcode"
         self._passcode: str | None = None
         self._valid_until: int | None = None
         self._unsub_timer: Callable[[], None] | None = None
@@ -2846,8 +2848,19 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        now_ts = int(time.time())
+        has_valid_code = self._passcode is not None and (self._valid_until is not None and self._valid_until > now_ts)
+        valid_until = self._valid_until if has_valid_code else None
+        remaining = max(0, valid_until - now_ts) if valid_until else 0
+        expires_at_iso = (
+            datetime.fromtimestamp(valid_until, UTC).isoformat()
+            if valid_until
+            else None
+        )
         return {
-            "valid_until": self._valid_until,
+            "valid_until": valid_until,
+            "expires_at": expires_at_iso,
+            "remaining_seconds": remaining,
             "device_id": self.device.id,
         }
 

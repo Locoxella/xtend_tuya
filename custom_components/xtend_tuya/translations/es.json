@@ -83,6 +83,9 @@
             }
         },
         "button": {
+            "generate_dynamic_passcode": {
+                "name": "Generar c\u00f3digo de acceso din\u00e1mico"
+            },
             "deep_clean": {
                 "name": "Limpieza a fondo"
             },
@@ -637,6 +640,9 @@
             }
         },
         "sensor": {
+            "dynamic_passcode": {
+                "name": "C\u00f3digo de acceso din\u00e1mico"
+            },
             "air_pressure": {
                 "name": "Presi\u00f3n del aire"
             },
