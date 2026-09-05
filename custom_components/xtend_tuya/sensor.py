@@ -2778,10 +2778,18 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
                 res = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                     account.get_dynamic_password, self.device
                 )
-                if res and isinstance(res, dict):
+                if res and isinstance(res, dict) and res.get("dynamic_password"):
                     self._passcode = res.get("dynamic_password", None)
                     self._valid_until = res.get("valid_until", None)
+                    LOGGER.error(f"[Tuya Lock Passcode Sensor] Passcode successfully set for {self.entity_id}: {self._passcode}")
                     self.async_write_ha_state()
+                else:
+                    LOGGER.error(f"[Tuya Lock Passcode Sensor] Could not retrieve passcode for device {self.device.id}, res={res}")
+            else:
+                LOGGER.error(f"[Tuya Lock Passcode Sensor] Account does not have get_dynamic_password method")
+        else:
+            LOGGER.error(f"[Tuya Lock Passcode Sensor] Could not find account {MESSAGE_SOURCE_TUYA_IOT}")
+
 
     @property
     def native_value(self) -> str | None:
