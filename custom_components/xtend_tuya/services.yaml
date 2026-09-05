@@ -74,8 +74,8 @@ create_temporary_password:
     password:
       required: true
       name: "Password / PIN"
-      description: "The 7-8 digit numeric passcode to create."
-      example: "1627374"
+      description: "Numeric passcode to create (7 digits required for residential locks, e.g. 1266455)."
+      example: "1266455"
       selector:
         text:
           type: "password"

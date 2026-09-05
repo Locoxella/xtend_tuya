@@ -87,7 +87,10 @@ SERVICE_CREATE_TEMP_PASSWORD = "create_temporary_password"
 SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_DEVICE_ID): vol.Any(cv.string, [cv.string]),
-        vol.Required("password"): cv.string,
+        vol.Required("password"): vol.All(
+            cv.string,
+            vol.Match(r"^\d{6,8}$", msg="El PIN debe ser puramente numérico y contener entre 6 y 8 dígitos."),
+        ),
         vol.Optional("name"): cv.string,
         vol.Optional("effective_time"): vol.Any(cv.positive_int, cv.string, cv.positive_float),
         vol.Optional("invalid_time"): vol.Any(cv.positive_int, cv.string, cv.positive_float),
@@ -421,6 +424,12 @@ class ServiceManager:
 
                 if not hasattr(target, "create_temporary_password"):
                     raise HomeAssistantError(f"Account target '{target}' does not support create_temporary_password.")
+
+                if getattr(device, "category", None) in ("ms", "videolock") and len(str(password)) != 7:
+                    raise HomeAssistantError(
+                        f"La cerradura '{getattr(device, 'name', dev_id)}' (categoría {getattr(device, 'category', 'ms')}) "
+                        f"requiere un PIN numérico de exactamente 7 dígitos (ingresaste {len(str(password))} dígitos: '{password}')."
+                    )
 
                 response = await XTEventLoopProtector.execute_out_of_event_loop_and_return(
                     target.create_temporary_password,

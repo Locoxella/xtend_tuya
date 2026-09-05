@@ -71,7 +71,7 @@
         },
         "password": {
           "name": "Contraseña / PIN",
-          "description": "El código numérico de 6 a 8 dígitos."
+          "description": "Código numérico a crear (7 dígitos requeridos para cerraduras residenciales, ej. 1266455)."
         },
         "name": {
           "name": "Nombre / Etiqueta",
