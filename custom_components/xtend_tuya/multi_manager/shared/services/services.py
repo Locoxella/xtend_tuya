@@ -84,7 +84,7 @@ SERVICE_WEBRTC_DEBUG_SCHEMA = vol.Schema(
 SERVICE_CREATE_TEMP_PASSWORD = "create_temporary_password"
 SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Optional(CONF_DEVICE_ID): vol.Any(cv.string, [cv.string]),
         vol.Required("password"): cv.string,
         vol.Optional("name"): cv.string,
         vol.Optional("effective_time"): vol.Any(cv.positive_int, cv.string, cv.positive_float),
@@ -96,7 +96,7 @@ SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
 SERVICE_GET_DYNAMIC_PASSCODE = "get_dynamic_passcode"
 SERVICE_GET_DYNAMIC_PASSCODE_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Optional(CONF_DEVICE_ID): vol.Any(cv.string, [cv.string]),
         vol.Optional(CONF_SOURCE): cv.string,
     }
 )
@@ -320,7 +320,8 @@ class ServiceManager:
     ) -> web.Response | dict[str, Any] | None:
         try:
             source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
-            device_id = event.data.get(CONF_DEVICE_ID, None)
+            device_id_raw = event.data.get(CONF_DEVICE_ID, None)
+            device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
             password = event.data.get("password", None)
             name = event.data.get("name", "HA Temp Password")
             effective_time_raw = event.data.get("effective_time", None)
@@ -440,7 +441,8 @@ class ServiceManager:
     ) -> dict[str, Any] | None:
         try:
             source = event.data.get(CONF_SOURCE, MESSAGE_SOURCE_TUYA_IOT)
-            device_id = event.data.get(CONF_DEVICE_ID, None)
+            device_id_raw = event.data.get(CONF_DEVICE_ID, None)
+            device_id = device_id_raw[0] if isinstance(device_id_raw, list) and device_id_raw else device_id_raw
             LOGGER.info(f"[Tuya Dynamic Passcode Service] Service called for device={device_id}")
             if not device_id:
                 LOGGER.error(f"[Tuya Dynamic Passcode Service] Missing required parameter: device_id")

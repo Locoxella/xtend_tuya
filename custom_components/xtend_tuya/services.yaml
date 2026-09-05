@@ -71,13 +71,6 @@ create_temporary_password:
     device:
       integration: xtend_tuya
   fields:
-    device_id:
-      required: true
-      name: "Device"
-      description: "The Tuya device ID of the smart lock."
-      selector:
-        device:
-          integration: xtend_tuya
     password:
       required: true
       name: "Password / PIN"
@@ -121,13 +114,6 @@ get_dynamic_passcode:
     device:
       integration: xtend_tuya
   fields:
-    device_id:
-      required: true
-      name: "Device"
-      description: "The Tuya device ID of the smart lock."
-      selector:
-        device:
-          integration: xtend_tuya
     source:
       required: false
       name: "Account Source"
