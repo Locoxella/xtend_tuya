@@ -2764,7 +2764,7 @@ class XTLockDynamicPasscodeSensor(XTEntity, RestoreSensor):  # type: ignore
         await self._async_update_passcode()
         self.async_on_remove(
             async_track_time_change(
-                self.hass, self._async_update_passcode_callback, second=[0, 30]
+                self.hass, self._async_update_passcode_callback, minute=list(range(0, 60, 5)), second=0
             )
         )
 

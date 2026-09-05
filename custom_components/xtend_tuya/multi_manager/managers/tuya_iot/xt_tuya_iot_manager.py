@@ -1172,9 +1172,37 @@ class XTIOTDeviceManager(TuyaDeviceManager):
         device: XTDevice,
         api: XTIOTOpenAPI | None = None,
     ) -> dict[str, Any] | None:
-        """Get or calculate 8-digit 5-minute dynamic password for lock."""
-        api_to_use = api or self.api
+        """Get or calculate 8-digit 5-minute dynamic password for lock with 0-API local cache."""
+        now_ts = int(time.time())
+        current_window = now_ts // 300
+        window_end = (current_window + 1) * 300
 
+        cache_key = f"dynamic_passcode_{device.id}"
+        if not hasattr(self, "_passcode_cache"):
+            self._passcode_cache: dict[str, dict[str, Any]] = {}
+
+        cached = self._passcode_cache.get(cache_key)
+        if cached and cached.get("window") == current_window:
+            return {
+                "dynamic_password": cached["dynamic_password"],
+                "valid_until": window_end,
+            }
+
+        # 1. Try local calculation first (0 Cloud API calls if local_key present)
+        local_key = getattr(device, "local_key", "") or ""
+        if not local_key and hasattr(device, "status"):
+            local_key = device.status.get("local_key", "")
+        if local_key:
+            code = self._calculate_offline_dynamic_passcode(local_key, device.id)
+            if code:
+                self._passcode_cache[cache_key] = {"window": current_window, "dynamic_password": code}
+                return {
+                    "dynamic_password": code,
+                    "valid_until": window_end,
+                }
+
+        # 2. Cloud API fetch (only if local_key missing, cached once per 5-minute window)
+        api_to_use = api or self.api
         ticket_id = self.get_door_lock_password_ticket(device, api_to_use)
 
         endpoints = [
@@ -1196,7 +1224,6 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                 if res and res.get("success", False):
                     result = res.get("result", {})
                     passcode = None
-                    valid_until = int(time.time()) + 300
 
                     if isinstance(result, (str, int)):
                         passcode = f"{int(result):08d}" if str(result).isdigit() else str(result)
@@ -1210,34 +1237,18 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                         )
                         if raw_code is not None:
                             passcode = f"{int(raw_code):08d}" if str(raw_code).isdigit() else str(raw_code)
-                        valid_until = (
-                            result.get("valid_until")
-                            or result.get("expire_time")
-                            or result.get("invalid_time")
-                            or valid_until
-                        )
 
                     if passcode:
+                        self._passcode_cache[cache_key] = {"window": current_window, "dynamic_password": passcode}
                         return {
                             "dynamic_password": passcode,
-                            "valid_until": valid_until,
+                            "valid_until": window_end,
                         }
             except Exception as e:
                 LOGGER.warning(f"Failed to fetch Cloud dynamic password at {endpoint}: {e}")
 
-        local_key = getattr(device, "local_key", "") or ""
-        if not local_key and hasattr(device, "status"):
-            local_key = device.status.get("local_key", "")
-        if local_key:
-            code = self._calculate_offline_dynamic_passcode(local_key, device.id)
-            if code:
-                now_ts = int(time.time())
-                window_end = ((now_ts // 300) + 1) * 300
-                return {
-                    "dynamic_password": code,
-                    "valid_until": window_end,
-                }
         return None
+
 
     @staticmethod
     def _calculate_offline_dynamic_passcode(local_key: str, device_id: str) -> str | None:
