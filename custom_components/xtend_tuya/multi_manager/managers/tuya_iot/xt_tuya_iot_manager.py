@@ -1341,15 +1341,15 @@ class XTIOTDeviceManager(TuyaDeviceManager):
                     LOGGER.info(f"[Tuya Temp Password] DELETE temp-passwords/{password_id}/record response: {record_res}")
                     if record_res and record_res.get("success", False):
                         res = record_res
-                    elif isinstance(record_res, dict) and record_res.get("code") == 2302:
-                        # 2302: password does not exist (already deleted)
-                        res = {"success": True, "result": True, "note": "Password record was already removed"}
+                    elif isinstance(record_res, dict) and record_res.get("code") in (2302, 2323):
+                        # 2302: password does not exist, 2323: door lock password record does not exist
+                        res = {"success": True, "result": True, "note": "Password record does not exist or was already removed"}
                     elif record_res:
                         res = record_res
 
                 # 3. Idempotent success if password already doesn't exist
-                if isinstance(res, dict) and not res.get("success", False) and res.get("code") == 2302:
-                    res = {"success": True, "result": True, "note": "Password does not exist"}
+                if isinstance(res, dict) and not res.get("success", False) and res.get("code") in (2302, 2323):
+                    res = {"success": True, "result": True, "note": "Password does not exist or was already removed"}
 
                 if res and res.get("success", False):
                     break
