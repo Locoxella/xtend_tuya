@@ -87,8 +87,8 @@ SERVICE_CREATE_TEMP_PASSWORD_SCHEMA = vol.Schema(
         vol.Required(CONF_DEVICE_ID): cv.string,
         vol.Required("password"): cv.string,
         vol.Optional("name"): cv.string,
-        vol.Optional("effective_time"): cv.positive_int,
-        vol.Optional("invalid_time"): cv.positive_int,
+        vol.Optional("effective_time"): vol.Any(cv.positive_int, cv.string, cv.positive_float),
+        vol.Optional("invalid_time"): vol.Any(cv.positive_int, cv.string, cv.positive_float),
         vol.Optional(CONF_SOURCE): cv.string,
     }
 )
@@ -280,6 +280,41 @@ class ServiceManager:
                     return debug_output
         return None
 
+def parse_time_to_millis(val: Any) -> int | None:
+    """Parse integer, float, string datetime or timestamp into milliseconds epoch integer."""
+    if val is None or val == "":
+        return None
+    if isinstance(val, (int, float)):
+        if val < 100000000000:
+            return int(val * 1000)
+        return int(val)
+    if isinstance(val, str):
+        val_str = val.strip()
+        try:
+            num = float(val_str)
+            if num < 100000000000:
+                return int(num * 1000)
+            return int(num)
+        except ValueError:
+            pass
+
+        try:
+            from homeassistant.util import dt as dt_util
+            if parsed_dt := dt_util.parse_datetime(val_str):
+                return int(parsed_dt.timestamp() * 1000)
+        except Exception:
+            pass
+
+        try:
+            from datetime import datetime
+            parsed_dt = datetime.fromisoformat(val_str)
+            return int(parsed_dt.timestamp() * 1000)
+        except Exception as e:
+            LOGGER.warning(f"[Tuya Temp Password] Could not parse date string '{val_str}': {e}")
+            return None
+    return None
+
+
     async def _handle_create_temp_password(
         self, event: XTEventData
     ) -> web.Response | dict[str, Any] | None:
@@ -288,9 +323,14 @@ class ServiceManager:
             device_id = event.data.get(CONF_DEVICE_ID, None)
             password = event.data.get("password", None)
             name = event.data.get("name", "HA Temp Password")
-            effective_time = event.data.get("effective_time", None)
-            invalid_time = event.data.get("invalid_time", None)
-            LOGGER.info(f"[Tuya Temp Password Service] Service called for device={device_id}, name='{name}'")
+            effective_time_raw = event.data.get("effective_time", None)
+            invalid_time_raw = event.data.get("invalid_time", None)
+            effective_time = parse_time_to_millis(effective_time_raw)
+            invalid_time = parse_time_to_millis(invalid_time_raw)
+            LOGGER.info(
+                f"[Tuya Temp Password Service] Service called for device={device_id}, name='{name}', "
+                f"eff_time_raw={effective_time_raw} -> {effective_time}, inv_time_raw={invalid_time_raw} -> {invalid_time}"
+            )
             if not device_id or not password:
                 LOGGER.error(f"[Tuya Temp Password Service] Missing required parameters: device_id={device_id}, password_provided={bool(password)}")
                 return None

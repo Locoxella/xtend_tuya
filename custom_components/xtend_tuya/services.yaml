@@ -86,14 +86,14 @@ create_temporary_password:
       default: "HA Temp Password"
     effective_time:
       required: false
-      name: "Effective Timestamp (ms)"
-      description: "Unix epoch timestamp in milliseconds when passcode becomes active (default: now)."
-      example: 1757048400000
+      name: "Effective Date / Timestamp"
+      description: "Optional start date/time (ISO string e.g. '2026-09-05T10:00:00', epoch seconds, or epoch milliseconds). Defaults to now if omitted."
+      example: "2026-09-05T10:00:00"
     invalid_time:
       required: false
-      name: "Invalid Timestamp (ms)"
-      description: "Unix epoch timestamp in milliseconds when passcode expires (default: 24h from now)."
-      example: 1757062800000
+      name: "Expiration Date / Timestamp"
+      description: "Optional expiration date/time (ISO string e.g. '2026-09-06T10:00:00', epoch seconds, or epoch milliseconds). Defaults to 24h from now if omitted."
+      example: "2026-09-06T10:00:00"
     source:
       required: false
       example: "tuya_iot"
