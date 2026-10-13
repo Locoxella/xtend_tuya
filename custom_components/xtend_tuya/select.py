@@ -34,7 +34,7 @@ from .ha_tuya_integration.tuya_integration_imports import (
     TuyaSelectEntity,
     TuyaSelectEntityDescription,
     TuyaCustomerDevice,
-    TuyaDPCodeTypeInformationWrapper,
+    TuyaDPCodeEnumWrapper,
     TuyaEnumTypeInformation,
 )
 
@@ -94,7 +94,7 @@ class XTEnumWithFixedValuesTypeInformation(TuyaEnumTypeInformation):
                         return type_information
         return None
 
-class XTDPCodeEnumWrapperWithFixedOptions[T = str](TuyaDPCodeTypeInformationWrapper[XTEnumWithFixedValuesTypeInformation, T]):
+class XTDPCodeEnumWrapperWithFixedOptions[T = str](TuyaDPCodeEnumWrapper[T]):
     _DPTYPE = XTEnumWithFixedValuesTypeInformation
     options: list[str]
     
