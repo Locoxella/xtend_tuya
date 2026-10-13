@@ -1,0 +1,113 @@
+name: Sync Upstream & Release Custom Fork
+
+on:
+  schedule:
+    # Runs every 6 hours to check for upstream releases
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  push:
+    branches:
+      - feature/guirnalda-effects
+    paths-ignore:
+      - 'README.md'
+      - '.ai_notes/**'
+      - 'docs/**'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Fork Repository
+        uses: actions/checkout@v4
+        with:
+          ref: feature/guirnalda-effects
+          fetch-depth: 0
+
+      - name: Fetch Upstream Releases & Determine Version
+        id: check_version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          UPSTREAM_TAG=$(gh api repos/azerty9971/xtend_tuya/releases/latest --jq '.tag_name')
+          UPSTREAM_VERSION="${UPSTREAM_TAG#v}"
+          echo "UPSTREAM_TAG=$UPSTREAM_TAG" >> $GITHUB_ENV
+          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> $GITHUB_ENV
+          
+          # Check for existing releases in the fork matching UPSTREAM_TAG-guirnalda.<number>
+          EXISTING_RELEASES=$(gh api repos/${{ github.repository }}/releases --jq ".[].tag_name | select(test(\"^${UPSTREAM_TAG}-guirnalda\\\\.[0-9]+$\"))" || true)
+          
+          if [ -z "$EXISTING_RELEASES" ]; then
+            echo "New upstream version detected ($UPSTREAM_TAG) or no prior releases matching pattern."
+            NEXT_NUM=1
+            IS_NEW_UPSTREAM=true
+            SHOULD_RELEASE=true
+          else
+            # Extract the highest numeric suffix
+            LATEST_NUM=$(echo "$EXISTING_RELEASES" | sed -E "s/.*-guirnalda\.([0-9]+)/\1/" | sort -n | tail -n 1)
+            LATEST_FORK_TAG="${UPSTREAM_TAG}-guirnalda.${LATEST_NUM}"
+            echo "Found latest fork release for $UPSTREAM_TAG: $LATEST_FORK_TAG"
+            
+            git fetch origin --tags
+            if git rev-parse "refs/tags/${LATEST_FORK_TAG}" >/dev/null 2>&1; then
+              COMMITS_AHEAD=$(git rev-list "refs/tags/${LATEST_FORK_TAG}..HEAD" --count)
+            else
+              COMMITS_AHEAD=1
+            fi
+            
+            if [ "$COMMITS_AHEAD" -gt 0 ]; then
+              echo "Branch has $COMMITS_AHEAD new commit(s) ahead of $LATEST_FORK_TAG. Bumping fork patch version."
+              NEXT_NUM=$((LATEST_NUM + 1))
+              IS_NEW_UPSTREAM=false
+              SHOULD_RELEASE=true
+            else
+              echo "No new commits since $LATEST_FORK_TAG. Skipping release."
+              NEXT_NUM="$LATEST_NUM"
+              IS_NEW_UPSTREAM=false
+              SHOULD_RELEASE=false
+            fi
+          fi
+          
+          MY_TAG="${UPSTREAM_TAG}-guirnalda.${NEXT_NUM}"
+          MY_VERSION="${UPSTREAM_VERSION}-guirnalda.${NEXT_NUM}"
+          
+          echo "IS_NEW_UPSTREAM=$IS_NEW_UPSTREAM" >> $GITHUB_ENV
+          echo "SHOULD_RELEASE=$SHOULD_RELEASE" >> $GITHUB_ENV
+          echo "MY_TAG=$MY_TAG" >> $GITHUB_ENV
+          echo "MY_VERSION=$MY_VERSION" >> $GITHUB_ENV
+
+      - name: Sync & Rebase Upstream / Bump Manifest
+        if: env.SHOULD_RELEASE == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [ "$IS_NEW_UPSTREAM" = "true" ]; then
+            echo "Rebasing our branch onto upstream $UPSTREAM_TAG..."
+            git remote add upstream https://github.com/azerty9971/xtend_tuya.git || true
+            git fetch upstream "$UPSTREAM_TAG"
+            git rebase "$UPSTREAM_TAG"
+          fi
+          
+          echo "Updating manifest.json version to $MY_VERSION..."
+          jq --arg ver "$MY_VERSION" '.version = $ver' custom_components/xtend_tuya/manifest.json > custom_components/xtend_tuya/manifest.json.tmp
+          mv custom_components/xtend_tuya/manifest.json.tmp custom_components/xtend_tuya/manifest.json
+          
+          git add custom_components/xtend_tuya/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): bump version to ${MY_TAG} [skip ci]"
+          fi
+          
+          git push origin feature/guirnalda-effects --force-with-lease
+
+      - name: Create Release in Fork
+        if: env.SHOULD_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$MY_TAG" \
+            --target feature/guirnalda-effects \
+            --title "$MY_TAG" \
+            --notes "Release sincronizada con upstream $UPSTREAM_TAG + parches guirnalda."
