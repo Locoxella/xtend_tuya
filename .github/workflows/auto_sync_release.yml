@@ -119,6 +119,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$MY_TAG" \
+            -R "${{ github.repository }}" \
             --target feature/guirnalda-effects \
             --title "$MY_TAG" \
             --notes "Release synchronized with upstream $UPSTREAM_TAG + custom fork patches (guirnalda effects, smart lock passcodes, and TuyaOpenAPI reconnection deadlock guard)."
