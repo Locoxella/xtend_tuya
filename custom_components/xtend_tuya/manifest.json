@@ -1,10 +1,18 @@
 {
   "domain": "xtend_tuya",
   "name": "Xtend Tuya",
-  "after_dependencies": ["tuya"],
-  "codeowners": ["@azerty9971"],
+  "after_dependencies": [
+    "tuya"
+  ],
+  "codeowners": [
+    "@azerty9971"
+  ],
   "config_flow": true,
-  "dependencies": ["ffmpeg", "http", "recorder"],
+  "dependencies": [
+    "ffmpeg",
+    "http",
+    "recorder"
+  ],
   "dhcp": [
     {
       "macaddress": "105A17*"
@@ -44,7 +52,10 @@
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/azerty9971/xtend_tuya/issues",
-  "loggers": ["tuya_iot", "tuya_sharing"],
+  "loggers": [
+    "tuya_iot",
+    "tuya_sharing"
+  ],
   "requirements": [],
-  "version": "4.5.3-guirnalda.1"
+  "version": "4.5.4-guirnalda.1"
 }
