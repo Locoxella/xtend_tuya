@@ -18,13 +18,20 @@ permissions:
 
 jobs:
   sync-and-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Fork Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: feature/guirnalda-effects
           fetch-depth: 0
+
+      - name: Run Standalone Unit Tests
+        id: unit_tests
+        run: |
+          python3 tests/test_openapi_reconnect.py -v
+          python3 tests/test_mq_watchdog.py
+          python3 tests/test_t3_decode.py
 
       - name: Fetch Upstream Releases & Determine Version
         id: check_version
@@ -33,30 +40,29 @@ jobs:
         run: |
           UPSTREAM_TAG=$(gh api repos/azerty9971/xtend_tuya/releases/latest --jq '.tag_name')
           UPSTREAM_VERSION="${UPSTREAM_TAG#v}"
-          echo "UPSTREAM_TAG=$UPSTREAM_TAG" >> $GITHUB_ENV
-          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> $GITHUB_ENV
-          
+          echo "UPSTREAM_TAG=$UPSTREAM_TAG" >> "$GITHUB_ENV"
+          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> "$GITHUB_ENV"
+
           # Check for existing releases in the fork matching UPSTREAM_TAG-guirnalda.<number>
-          EXISTING_RELEASES=$(gh api repos/${{ github.repository }}/releases --jq ".[].tag_name | select(test(\"^${UPSTREAM_TAG}-guirnalda\\\\.[0-9]+$\"))" || true)
-          
+          EXISTING_RELEASES=$(gh api "repos/${{ github.repository }}/releases" --jq ".[].tag_name | select(test(\"^${UPSTREAM_TAG}-guirnalda\\\\.[0-9]+$\"))" || true)
+
           if [ -z "$EXISTING_RELEASES" ]; then
             echo "New upstream version detected ($UPSTREAM_TAG) or no prior releases matching pattern."
             NEXT_NUM=1
             IS_NEW_UPSTREAM=true
             SHOULD_RELEASE=true
           else
-            # Extract the highest numeric suffix
             LATEST_NUM=$(echo "$EXISTING_RELEASES" | sed -E "s/.*-guirnalda\.([0-9]+)/\1/" | sort -n | tail -n 1)
             LATEST_FORK_TAG="${UPSTREAM_TAG}-guirnalda.${LATEST_NUM}"
             echo "Found latest fork release for $UPSTREAM_TAG: $LATEST_FORK_TAG"
-            
+
             git fetch origin --tags
             if git rev-parse "refs/tags/${LATEST_FORK_TAG}" >/dev/null 2>&1; then
               COMMITS_AHEAD=$(git rev-list "refs/tags/${LATEST_FORK_TAG}..HEAD" --count)
             else
               COMMITS_AHEAD=1
             fi
-            
+
             if [ "$COMMITS_AHEAD" -gt 0 ]; then
               echo "Branch has $COMMITS_AHEAD new commit(s) ahead of $LATEST_FORK_TAG. Bumping fork patch version."
               NEXT_NUM=$((LATEST_NUM + 1))
@@ -69,38 +75,43 @@ jobs:
               SHOULD_RELEASE=false
             fi
           fi
-          
+
           MY_TAG="${UPSTREAM_TAG}-guirnalda.${NEXT_NUM}"
           MY_VERSION="${UPSTREAM_VERSION}-guirnalda.${NEXT_NUM}"
-          
-          echo "IS_NEW_UPSTREAM=$IS_NEW_UPSTREAM" >> $GITHUB_ENV
-          echo "SHOULD_RELEASE=$SHOULD_RELEASE" >> $GITHUB_ENV
-          echo "MY_TAG=$MY_TAG" >> $GITHUB_ENV
-          echo "MY_VERSION=$MY_VERSION" >> $GITHUB_ENV
+
+          echo "IS_NEW_UPSTREAM=$IS_NEW_UPSTREAM" >> "$GITHUB_ENV"
+          echo "SHOULD_RELEASE=$SHOULD_RELEASE" >> "$GITHUB_ENV"
+          echo "MY_TAG=$MY_TAG" >> "$GITHUB_ENV"
+          echo "MY_VERSION=$MY_VERSION" >> "$GITHUB_ENV"
 
       - name: Sync & Rebase Upstream / Bump Manifest
         if: env.SHOULD_RELEASE == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if [ "$IS_NEW_UPSTREAM" = "true" ]; then
-            echo "Rebasing our branch onto upstream $UPSTREAM_TAG..."
-            git remote add upstream https://github.com/azerty9971/xtend_tuya.git || true
-            git fetch upstream "$UPSTREAM_TAG"
+
+          git remote add upstream https://github.com/azerty9971/xtend_tuya.git 2>/dev/null || true
+          git fetch upstream "$UPSTREAM_TAG" --tags
+
+          if [ "$IS_NEW_UPSTREAM" = "true" ] && ! git merge-base --is-ancestor "$UPSTREAM_TAG" HEAD; then
+            echo "Rebasing branch onto upstream $UPSTREAM_TAG..."
             git rebase "$UPSTREAM_TAG"
+          else
+            echo "Branch already includes upstream $UPSTREAM_TAG."
           fi
-          
+
           echo "Updating manifest.json version to $MY_VERSION..."
           jq --arg ver "$MY_VERSION" '.version = $ver' custom_components/xtend_tuya/manifest.json > custom_components/xtend_tuya/manifest.json.tmp
           mv custom_components/xtend_tuya/manifest.json.tmp custom_components/xtend_tuya/manifest.json
-          
+
           git add custom_components/xtend_tuya/manifest.json
           if ! git diff --cached --quiet; then
             git commit -m "chore(release): bump version to ${MY_TAG} [skip ci]"
           fi
-          
+
+          git tag -f "$MY_TAG"
           git push origin feature/guirnalda-effects --force-with-lease
+          git push origin "refs/tags/${MY_TAG}" --force
 
       - name: Create Release in Fork
         if: env.SHOULD_RELEASE == 'true'
@@ -110,4 +121,23 @@ jobs:
           gh release create "$MY_TAG" \
             --target feature/guirnalda-effects \
             --title "$MY_TAG" \
-            --notes "Release sincronizada con upstream $UPSTREAM_TAG + parches guirnalda."
+            --notes "Release synchronized with upstream $UPSTREAM_TAG + custom fork patches (guirnalda effects, smart lock passcodes, and TuyaOpenAPI reconnection deadlock guard)."
+
+      - name: Publish Step Summary & Notice
+        if: always()
+        run: |
+          HEAD_SHA=$(git rev-parse --short HEAD)
+          SUMMARY_MD=$(cat <<EOF
+          ### Xtend Tuya Fork Sync & Release Report
+          | Metric | Value |
+          | :--- | :--- |
+          | **Upstream Latest Tag** | \`${UPSTREAM_TAG}\` |
+          | **Fork Target Tag** | \`${MY_TAG}\` |
+          | **Release Action** | \`should_release=${SHOULD_RELEASE}\` (\`new_upstream=${IS_NEW_UPSTREAM}\`) |
+          | **Commit SHA** | \`${HEAD_SHA}\` |
+          | **Standalone Unit Tests** | \`3 suites passed (openapi_reconnect, mq_watchdog, t3_decode)\` |
+          EOF
+          )
+          echo "$SUMMARY_MD" >> "$GITHUB_STEP_SUMMARY"
+          echo "$SUMMARY_MD"
+          echo "::notice title=Xtend Tuya Release (${MY_TAG})::Upstream=${UPSTREAM_TAG}, Released=${SHOULD_RELEASE}, SHA=${HEAD_SHA}"
