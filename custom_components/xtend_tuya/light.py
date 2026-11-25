@@ -424,19 +424,15 @@ class XTLightEntity(XTEntity, TuyaLightEntity):
         self.device_manager = device_manager
         self.entity_description = description
 
-        # Enable EFFECT only for string lights (based on model name / product name)
-        self._is_string_light = (
-            self.device.product_name
-            and ("string light" in self.device.product_name.lower() or "guirnalda" in self.device.product_name.lower())
-        )
-        if self._color_mode_wrapper and self._is_string_light:
+        # Enable EFFECT for lights exposing work_mode options (e.g., string lights and RGB+CT bulbs)
+        if self._color_mode_wrapper and getattr(self._color_mode_wrapper, "options", None):
             self._attr_supported_features |= LightEntityFeature.EFFECT
             self._attr_effect_list = self._color_mode_wrapper.options
 
     @property
     def effect(self) -> str | None:
         """Return the current effect."""
-        if self._color_mode_wrapper and getattr(self, "_is_string_light", False):
+        if self._color_mode_wrapper and self._attr_effect_list:
             return self._read_wrapper(self._color_mode_wrapper)
         return None
 
@@ -446,7 +442,6 @@ class XTLightEntity(XTEntity, TuyaLightEntity):
             effect = kwargs.pop(ATTR_EFFECT)
             if (
                 self._color_mode_wrapper
-                and getattr(self, "_is_string_light", False)
                 and self._attr_effect_list
                 and effect in self._attr_effect_list
             ):
