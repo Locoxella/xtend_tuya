@@ -398,39 +398,6 @@ async def async_setup_entry(
     )
 
 
-def _grad_unit(h: int, s: int = 1000, v: int = 1000, dur: int = 70) -> dict[str, Any]:
-    return {
-        "bright": 0,
-        "h": h,
-        "s": s,
-        "temperature": 0,
-        "unit_change_mode": "gradient",
-        "unit_gradient_duration": dur,
-        "unit_switch_duration": dur,
-        "v": v,
-    }
-
-
-_TUYA_SCENE_PRESETS: dict[str, dict[str, Any]] = {
-    "Gorgeous": {
-        "scene_num": 8,
-        "scene_units": [_grad_unit(h) for h in (0, 120, 240, 61, 174, 275)],
-    },
-    "Christmas": {
-        "scene_num": 7,
-        "scene_units": [_grad_unit(0), _grad_unit(120)],
-    },
-    "Halloween": {
-        "scene_num": 6,
-        "scene_units": [_grad_unit(25, v=600), _grad_unit(280, v=600)],
-    },
-    "Romance": {
-        "scene_num": 5,
-        "scene_units": [_grad_unit(330, s=850, v=800, dur=80), _grad_unit(350, s=850, v=800, dur=80)],
-    },
-}
-
-
 class XTLightEntity(XTEntity, TuyaLightEntity):
     """XT light device."""
 
@@ -458,37 +425,15 @@ class XTLightEntity(XTEntity, TuyaLightEntity):
         self.entity_description = description
 
         # Enable EFFECT for lights exposing work_mode options (e.g., string lights and RGB+CT bulbs)
-        self._has_scene_data_v2 = (
-            "scene_data_v2" in self.device.function
-            or "scene_data_v2" in self.device.status
-        )
         if self._color_mode_wrapper and getattr(self._color_mode_wrapper, "options", None):
             self._attr_supported_features |= LightEntityFeature.EFFECT
-            effects = list(self._color_mode_wrapper.options)
-            if self._has_scene_data_v2:
-                for preset in _TUYA_SCENE_PRESETS:
-                    if preset not in effects:
-                        effects.append(preset)
-            self._attr_effect_list = effects
+            self._attr_effect_list = self._color_mode_wrapper.options
 
     @property
     def effect(self) -> str | None:
         """Return the current effect."""
         if self._color_mode_wrapper and self._attr_effect_list:
-            mode = self._read_wrapper(self._color_mode_wrapper)
-            if mode == "scene" and getattr(self, "_has_scene_data_v2", False):
-                raw = self.device.status.get("scene_data_v2")
-                if isinstance(raw, str):
-                    try:
-                        raw = json.loads(raw)
-                    except ValueError:
-                        raw = None
-                if isinstance(raw, dict):
-                    snum = raw.get("scene_num")
-                    for name, preset in _TUYA_SCENE_PRESETS.items():
-                        if preset["scene_num"] == snum:
-                            return name
-            return mode
+            return self._read_wrapper(self._color_mode_wrapper)
         return None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -500,20 +445,9 @@ class XTLightEntity(XTEntity, TuyaLightEntity):
                 and self._attr_effect_list
                 and effect in self._attr_effect_list
             ):
-                if effect in _TUYA_SCENE_PRESETS and getattr(self, "_has_scene_data_v2", False):
-                    commands = self._color_mode_wrapper.get_update_commands(
-                        self.device, "scene"
-                    )
-                    commands.append(
-                        {
-                            "code": "scene_data_v2",
-                            "value": json.dumps(_TUYA_SCENE_PRESETS[effect]),
-                        }
-                    )
-                else:
-                    commands = self._color_mode_wrapper.get_update_commands(
-                        self.device, effect
-                    )
+                commands = self._color_mode_wrapper.get_update_commands(
+                    self.device, effect
+                )
                 if not self.is_on:
                     commands.extend(
                         self._switch_wrapper.get_update_commands(self.device, True)
